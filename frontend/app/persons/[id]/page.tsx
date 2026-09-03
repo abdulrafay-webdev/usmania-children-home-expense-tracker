@@ -275,11 +275,11 @@ export default function PersonDetailPage() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
             <button
               onClick={handleDownloadPdf}
               disabled={isDownloadingPdf}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition-all disabled:opacity-50 active:scale-95"
             >
               {isDownloadingPdf ? (
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
@@ -294,27 +294,31 @@ export default function PersonDetailPage() {
                 setEntryToEdit(null);
                 setIsEntryModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-emerald-200 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-emerald-200 active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Add Expense Entry</span>
             </button>
 
-            <button
-              onClick={() => setIsEditPersonOpen(true)}
-              title="Edit Person Profile"
-              className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsEditPersonOpen(true)}
+                title="Edit Person Profile"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 text-xs font-medium"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span className="sm:hidden">Edit Profile</span>
+              </button>
 
-            <button
-              onClick={() => setIsDeletePersonOpen(true)}
-              title="Delete Person Record"
-              className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-slate-200"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+              <button
+                onClick={() => setIsDeletePersonOpen(true)}
+                title="Delete Person Record"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-slate-200 text-xs font-medium"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="sm:hidden">Delete</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -454,127 +458,216 @@ export default function PersonDetailPage() {
           </div>
         </div>
 
-        {/* Entries Table */}
+        {/* Entries Table & Mobile Card View */}
         {filteredEntries.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
-                  <th className="py-3 px-4">Item &amp; Description</th>
-                  <th className="py-3 px-4">Quality / Grade</th>
-                  <th className="py-3 px-4 text-right">Quantity</th>
-                  <th className="py-3 px-4 text-right">Unit Price</th>
-                  <th className="py-3 px-4 text-right">Line Total</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredEntries.map((entry, idx) => {
-                  const lineTotal = entry.quantity * entry.price;
-                  return (
-                    <tr
-                      key={entry.id}
-                      className="hover:bg-slate-50/70 transition-colors group"
-                    >
-                      {/* Row Index */}
-                      <td className="py-3.5 px-4 text-center text-xs font-mono text-slate-400">
-                        {idx + 1}
-                      </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="py-3 px-4 w-12 text-center">#</th>
+                    <th className="py-3 px-4">Item &amp; Description</th>
+                    <th className="py-3 px-4">Quality / Grade</th>
+                    <th className="py-3 px-4 text-right">Quantity</th>
+                    <th className="py-3 px-4 text-right">Unit Price</th>
+                    <th className="py-3 px-4 text-right">Line Total</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredEntries.map((entry, idx) => {
+                    const lineTotal = entry.quantity * entry.price;
+                    return (
+                      <tr
+                        key={entry.id}
+                        className="hover:bg-slate-50/70 transition-colors group"
+                      >
+                        {/* Row Index */}
+                        <td className="py-3.5 px-4 text-center text-xs font-mono text-slate-400">
+                          {idx + 1}
+                        </td>
 
-                      {/* Item Name & Note */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-slate-900 block">
-                          {entry.item_name}
+                        {/* Item Name & Note */}
+                        <td className="py-3.5 px-4">
+                          <span className="font-semibold text-slate-900 block">
+                            {entry.item_name}
+                          </span>
+                          {entry.note && (
+                            <span className="text-xs text-slate-500 block mt-0.5 italic">
+                              {entry.note}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Quality */}
+                        <td className="py-3.5 px-4 text-xs text-slate-600">
+                          {entry.item_quality ? (
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700">
+                              {entry.item_quality}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        {/* Quantity */}
+                        <td className="py-3.5 px-4 text-right font-medium text-slate-800">
+                          {entry.quantity}
+                        </td>
+
+                        {/* Unit Price */}
+                        <td className="py-3.5 px-4 text-right text-slate-600">
+                          {formatCurrency(entry.price)}
+                        </td>
+
+                        {/* Line Total */}
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                          {formatCurrency(lineTotal)}
+                        </td>
+
+                        {/* Date */}
+                        <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
+                          {formatDate(entry.created_at)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setEntryToEdit(entry);
+                                setIsEntryModalOpen(true);
+                              }}
+                              title="Edit Entry"
+                              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setEntryToDelete(entry)}
+                              title="Delete Entry"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                {/* Grand Total Footer */}
+                <tfoot>
+                  <tr className="bg-slate-50 font-semibold border-t-2 border-slate-200">
+                    <td colSpan={5} className="py-3.5 px-4 text-right text-slate-700">
+                      Grand Total Spent:
+                    </td>
+                    <td className="py-3.5 px-4 text-right text-slate-900 font-bold text-base">
+                      {formatCurrency(totalSpent)}
+                    </td>
+                    <td colSpan={2} className="py-3.5 px-4 text-xs text-slate-500">
+                      Remaining:{" "}
+                      <span
+                        className={`font-bold ${
+                          !isDeficit ? "text-emerald-700" : "text-red-600"
+                        }`}
+                      >
+                        {formatCurrency(remainingBalance)}
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {filteredEntries.map((entry, idx) => {
+                const lineTotal = entry.quantity * entry.price;
+                return (
+                  <div key={entry.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 text-[11px] font-mono text-slate-500 flex items-center justify-center shrink-0">
+                          {idx + 1}
                         </span>
-                        {entry.note && (
-                          <span className="text-xs text-slate-500 block mt-0.5 italic">
-                            {entry.note}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Quality */}
-                      <td className="py-3.5 px-4 text-xs text-slate-600">
-                        {entry.item_quality ? (
-                          <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700">
-                            {entry.item_quality}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-
-                      {/* Quantity */}
-                      <td className="py-3.5 px-4 text-right font-medium text-slate-800">
-                        {entry.quantity}
-                      </td>
-
-                      {/* Unit Price */}
-                      <td className="py-3.5 px-4 text-right text-slate-600">
-                        {formatCurrency(entry.price)}
-                      </td>
-
-                      {/* Line Total */}
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
+                        <h4 className="font-semibold text-slate-900 text-sm truncate">
+                          {entry.item_name}
+                        </h4>
+                      </div>
+                      <span className="font-bold text-slate-900 text-sm sm:text-base shrink-0">
                         {formatCurrency(lineTotal)}
-                      </td>
+                      </span>
+                    </div>
 
-                      {/* Date */}
-                      <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
-                        {formatDate(entry.created_at)}
-                      </td>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                        {entry.quantity} qty
+                      </span>
+                      <span>×</span>
+                      <span>{formatCurrency(entry.price)} / unit</span>
+                      {entry.item_quality && (
+                        <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-100 font-medium">
+                          {entry.item_quality}
+                        </span>
+                      )}
+                    </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEntryToEdit(entry);
-                              setIsEntryModalOpen(true);
-                            }}
-                            title="Edit Entry"
-                            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setEntryToDelete(entry)}
-                            title="Delete Entry"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {/* Grand Total Footer */}
-              <tfoot>
-                <tr className="bg-slate-50 font-semibold border-t-2 border-slate-200">
-                  <td colSpan={5} className="py-3.5 px-4 text-right text-slate-700">
-                    Grand Total Spent:
-                  </td>
-                  <td className="py-3.5 px-4 text-right text-slate-900 font-bold text-base">
+                    {entry.note && (
+                      <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        {entry.note}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1.5 text-xs text-slate-500 border-t border-slate-50">
+                      <span>{formatDate(entry.created_at)}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEntryToEdit(entry);
+                            setIsEntryModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => setEntryToDelete(entry)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Mobile Grand Total Summary Footer */}
+              <div className="p-4 bg-slate-50 border-t-2 border-slate-200 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+                  <span>Grand Total Spent ({filteredEntries.length} items):</span>
+                  <span className="text-slate-900 font-bold text-sm">
                     {formatCurrency(totalSpent)}
-                  </td>
-                  <td colSpan={2} className="py-3.5 px-4 text-xs text-slate-500">
-                    Remaining:{" "}
-                    <span
-                      className={`font-bold ${
-                        !isDeficit ? "text-emerald-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(remainingBalance)}
-                    </span>
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+                  <span>Remaining Balance:</span>
+                  <span
+                    className={`font-bold text-sm ${
+                      !isDeficit ? "text-emerald-700" : "text-red-600"
+                    }`}
+                  >
+                    {formatCurrency(remainingBalance)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="p-12 text-center">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />

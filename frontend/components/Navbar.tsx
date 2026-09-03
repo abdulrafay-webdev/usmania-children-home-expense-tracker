@@ -2,13 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartHandshake, LayoutDashboard, Users, PlusCircle } from "lucide-react";
-import { useState } from "react";
+import {
+  HeartHandshake,
+  LayoutDashboard,
+  Users,
+  PlusCircle,
+  Menu,
+  X,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 import PersonModal from "./PersonModal";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Close mobile menu whenever route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const isActive = (path: string) => {
     if (path === "/" && pathname === "/") return true;
@@ -22,22 +35,22 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Brand Logo & Name */}
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-200 group-hover:bg-emerald-700 transition-colors">
-                <HeartHandshake className="w-6 h-6" />
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-200 group-hover:bg-emerald-700 transition-colors shrink-0">
+                <HeartHandshake className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <span className="font-bold text-lg text-slate-800 tracking-tight block leading-tight">
+              <div className="min-w-0">
+                <span className="font-bold text-base sm:text-lg text-slate-800 tracking-tight block leading-tight truncate">
                   Usmania Children Home
                 </span>
-                <span className="text-xs font-medium text-emerald-700 block">
-                  Expense & Donation Tracker
+                <span className="text-[11px] sm:text-xs font-medium text-emerald-700 block truncate">
+                  Expense &amp; Donation Tracker
                 </span>
               </div>
             </Link>
 
-            {/* Nav Links */}
-            <nav className="flex items-center gap-1 sm:gap-2">
+            {/* Desktop Navigation */}
+            <nav className="hidden sm:flex items-center gap-1.5 sm:gap-2">
               <Link
                 href="/"
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -67,11 +80,78 @@ export default function Navbar() {
                 className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-sm transition-all active:scale-95"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Person</span>
+                <span>Add Person</span>
               </button>
             </nav>
+
+            {/* Mobile Actions: Add button + Hamburger Menu Icon */}
+            <div className="flex items-center gap-1.5 sm:hidden">
+              <button
+                onClick={() => setIsAddPersonOpen(true)}
+                aria-label="Quick Add Person"
+                className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors"
+              >
+                <PlusCircle className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle Mobile Navigation Menu"
+                className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-6 h-6 text-slate-800" />
+                ) : (
+                  <Menu className="w-6 h-6 text-slate-800" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-150">
+            <Link
+              href="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                isActive("/")
+                  ? "bg-emerald-50 text-emerald-700 font-semibold"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <LayoutDashboard className="w-5 h-5 text-emerald-600" />
+              <span>Dashboard</span>
+            </Link>
+
+            <Link
+              href="/persons"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                isActive("/persons")
+                  ? "bg-emerald-50 text-emerald-700 font-semibold"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              <Users className="w-5 h-5 text-emerald-600" />
+              <span>Persons &amp; Contributor Accounts</span>
+            </Link>
+
+            <div className="pt-2 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAddPersonOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-all"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Add New Person</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Global Quick Add Person Modal */}

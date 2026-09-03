@@ -136,7 +136,7 @@ export default function PersonsPage() {
             setPersonToEdit(null);
             setIsAddModalOpen(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all shadow-sm active:scale-95 shrink-0 self-start sm:self-auto"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all shadow-sm active:scale-95 shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Add New Person</span>
@@ -164,7 +164,7 @@ export default function PersonsPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
+            className="flex-1 sm:flex-none px-3 py-2 text-sm border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>

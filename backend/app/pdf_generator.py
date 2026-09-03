@@ -57,6 +57,7 @@ def format_currency(amount: float) -> str:
 
 def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     buffer = io.BytesIO()
+    # Letter size: 612 x 792 pt. Margins 40 left & right => 532 pt usable width.
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
@@ -94,29 +95,29 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     card_label_style = ParagraphStyle(
         name="CardLabel",
         fontName="Helvetica-Bold",
-        fontSize=8,
-        leading=10,
+        fontSize=7.5,
+        leading=9.5,
         textColor=colors.HexColor("#475569"),
     )
     card_val_style = ParagraphStyle(
         name="CardVal",
         fontName="Helvetica-Bold",
-        fontSize=12,
-        leading=15,
+        fontSize=11,
+        leading=14,
         textColor=colors.HexColor("#0f172a"),
     )
     card_val_balance = ParagraphStyle(
         name="CardValBalance",
         fontName="Helvetica-Bold",
-        fontSize=13,
-        leading=16,
+        fontSize=11.5,
+        leading=14.5,
         textColor=colors.HexColor("#047857"),
     )
     card_val_balance_neg = ParagraphStyle(
         name="CardValBalanceNeg",
         fontName="Helvetica-Bold",
-        fontSize=13,
-        leading=16,
+        fontSize=11.5,
+        leading=14.5,
         textColor=colors.HexColor("#b91c1c"),
     )
     table_header_style = ParagraphStyle(
@@ -125,6 +126,14 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         fontSize=8.5,
         leading=11,
         textColor=colors.white,
+    )
+    table_header_right = ParagraphStyle(
+        name="TableHeaderRight",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.white,
+        alignment=2,
     )
     table_cell_style = ParagraphStyle(
         name="TableCell",
@@ -139,6 +148,37 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         fontSize=8.5,
         leading=11,
         textColor=colors.HexColor("#1e293b"),
+    )
+    table_cell_right = ParagraphStyle(
+        name="TableCellRight",
+        fontName="Helvetica",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#1e293b"),
+        alignment=2,
+    )
+    table_cell_right_bold = ParagraphStyle(
+        name="TableCellRightBold",
+        fontName="Helvetica-Bold",
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#1e293b"),
+        alignment=2,
+    )
+    grand_total_label = ParagraphStyle(
+        name="GrandTotalLabel",
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=colors.HexColor("#0f766e"),
+    )
+    grand_total_amount = ParagraphStyle(
+        name="GrandTotalAmount",
+        fontName="Helvetica-Bold",
+        fontSize=9.5,
+        leading=12.5,
+        textColor=colors.HexColor("#0f766e"),
+        alignment=2,
     )
     table_cell_muted = ParagraphStyle(
         name="TableCellMuted",
@@ -177,7 +217,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0f766e"), spaceAfter=14))
 
-    # 2. Person Summary & Financial Overview Cards
+    # 2. Person Summary & Financial Overview Cards (Total available width: 532)
     total_spent = sum(entry.quantity * entry.price for entry in entries)
     remaining_balance = person.total_amount_given - total_spent
 
@@ -190,6 +230,8 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         Paragraph(f"<b>Record Created:</b> {person_created_str}", card_label_style),
     ]
 
+    # Ample width given to numbers so they never wrap into multiple lines:
+    # 172 + 120 + 120 + 120 = 532 pt
     card_data = [
         [
             person_info,
@@ -214,7 +256,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ]
     ]
 
-    summary_table = Table(card_data, colWidths=[200, 110, 110, 112])
+    summary_table = Table(card_data, colWidths=[172, 120, 120, 120])
     summary_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#f8fafc")),
         ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#eff6ff")), # light blue
@@ -240,15 +282,17 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
             Paragraph("<b>#</b>", table_header_style),
             Paragraph("<b>Item Name</b>", table_header_style),
             Paragraph("<b>Quality</b>", table_header_style),
-            Paragraph("<b>Qty</b>", table_header_style),
-            Paragraph("<b>Unit Price</b>", table_header_style),
-            Paragraph("<b>Total</b>", table_header_style),
+            Paragraph("<b>Qty</b>", table_header_right),
+            Paragraph("<b>Unit Price</b>", table_header_right),
+            Paragraph("<b>Line Total</b>", table_header_right),
             Paragraph("<b>Date</b>", table_header_style),
             Paragraph("<b>Note</b>", table_header_style),
         ]
     ]
 
-    col_widths = [24, 118, 65, 40, 65, 75, 65, 80]
+    # Adjusted column widths so Line Total column has 95pt width (never wraps across 3 lines)
+    # Sum: 22 + 125 + 55 + 35 + 70 + 95 + 65 + 65 = 532 pt
+    col_widths = [22, 125, 55, 35, 70, 95, 65, 65]
 
     if not entries:
         empty_cell = Paragraph("No expense entries recorded for this person yet.", table_cell_muted)
@@ -261,21 +305,21 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
                 Paragraph(str(idx), table_cell_style),
                 Paragraph(item.item_name, table_cell_bold),
                 Paragraph(item.item_quality or "—", table_cell_style),
-                Paragraph(f"{item.quantity:g}", table_cell_style),
-                Paragraph(format_currency(item.price), table_cell_style),
-                Paragraph(format_currency(line_tot), table_cell_bold),
+                Paragraph(f"{item.quantity:g}", table_cell_right),
+                Paragraph(format_currency(item.price), table_cell_right),
+                Paragraph(format_currency(line_tot), table_cell_right_bold),
                 Paragraph(date_str, table_cell_style),
                 Paragraph(item.note or "—", table_cell_muted),
             ])
 
-    # Grand total row
+    # Grand total row: Span columns 0 to 4 for clean one-line label, column 5 for amount, 6-7 empty
     table_data.append([
-        Paragraph("<b>TOTAL</b>", table_cell_bold),
-        Paragraph(f"<b>{len(entries)} entries recorded</b>", table_cell_style),
+        Paragraph("<b>GRAND TOTAL</b>", grand_total_label),
+        Paragraph(f"<b>Total Spent ({len(entries)} items recorded)</b>", grand_total_label),
         "",
         "",
         "",
-        Paragraph(f"<b>{format_currency(total_spent)}</b>", table_cell_bold),
+        Paragraph(f"<b>{format_currency(total_spent)}</b>", grand_total_amount),
         "",
         ""
     ])
@@ -294,6 +338,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ("LINEBELOW", (0, -1), (-1, -1), 1.5, colors.HexColor("#0f766e")),
         ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f1f5f9")),
         ("SPAN", (1, -1), (4, -1)),
+        ("SPAN", (6, -1), (7, -1)),
     ]
 
     # Alternating row colors
