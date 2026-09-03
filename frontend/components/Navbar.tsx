@@ -9,12 +9,16 @@ import {
   PlusCircle,
   Menu,
   X,
+  LogOut,
+  UserCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import PersonModal from "./PersonModal";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
   const [isAddPersonOpen, setIsAddPersonOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -22,6 +26,8 @@ export default function Navbar() {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  const isLoginPage = pathname === "/login";
 
   const isActive = (path: string) => {
     if (path === "/" && pathname === "/") return true;
@@ -35,7 +41,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Brand Logo & Name */}
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+            <Link href={isAuthenticated ? "/" : "/login"} className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-200 group-hover:bg-emerald-700 transition-colors shrink-0">
                 <HeartHandshake className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
@@ -49,69 +55,153 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden sm:flex items-center gap-1.5 sm:gap-2">
-              <Link
-                href="/"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive("/")
-                    ? "bg-emerald-50 text-emerald-700 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Dashboard</span>
-              </Link>
+            {/* If on Login Page, show minimal indicator */}
+            {isLoginPage ? (
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+                <span>Admin Sign In</span>
+              </div>
+            ) : isAuthenticated ? (
+              <>
+                {/* Desktop Navigation */}
+                <nav className="hidden lg:flex items-center gap-2">
+                  <Link
+                    href="/"
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive("/")
+                        ? "bg-emerald-50 text-emerald-700 font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </Link>
 
-              <Link
-                href="/persons"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive("/persons")
-                    ? "bg-emerald-50 text-emerald-700 font-semibold"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                <Users className="w-4 h-4" />
-                <span>Persons</span>
-              </Link>
+                  <Link
+                    href="/persons"
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive("/persons")
+                        ? "bg-emerald-50 text-emerald-700 font-semibold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>Persons</span>
+                  </Link>
 
-              <button
-                onClick={() => setIsAddPersonOpen(true)}
-                className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-sm transition-all active:scale-95"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Add Person</span>
-              </button>
-            </nav>
+                  <button
+                    onClick={() => setIsAddPersonOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-sm transition-all active:scale-95"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>Add Person</span>
+                  </button>
 
-            {/* Mobile Actions: Add button + Hamburger Menu Icon */}
-            <div className="flex items-center gap-1.5 sm:hidden">
-              <button
-                onClick={() => setIsAddPersonOpen(true)}
-                aria-label="Quick Add Person"
-                className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors"
-              >
-                <PlusCircle className="w-5 h-5" />
-              </button>
+                  <div className="h-5 w-px bg-slate-200 mx-1" />
 
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle Mobile Navigation Menu"
-                className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
-              >
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6 text-slate-800" />
-                ) : (
-                  <Menu className="w-6 h-6 text-slate-800" />
-                )}
-              </button>
-            </div>
+                  {/* User Profile Badge */}
+                  <div className="flex items-center gap-2 pl-1">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                      SR
+                    </div>
+                    <div className="text-left hidden xl:block">
+                      <span className="text-xs font-semibold text-slate-800 block leading-tight">
+                        {user?.name || "Saif Ur Rehman"}
+                      </span>
+                      <span className="text-[10px] text-slate-500 block leading-tight">
+                        {user?.email || "saifurrehman@gmail.com"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Logout Button */}
+                  <button
+                    onClick={logout}
+                    title="Sign Out"
+                    className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </nav>
+
+                {/* Medium screens (Tablet / Foldable) */}
+                <div className="hidden sm:flex lg:hidden items-center gap-2">
+                  <Link
+                    href="/"
+                    className={`p-2 rounded-lg text-sm ${
+                      isActive("/") ? "bg-emerald-50 text-emerald-700" : "text-slate-600"
+                    }`}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                  </Link>
+                  <Link
+                    href="/persons"
+                    className={`p-2 rounded-lg text-sm ${
+                      isActive("/persons") ? "bg-emerald-50 text-emerald-700" : "text-slate-600"
+                    }`}
+                  >
+                    <Users className="w-5 h-5" />
+                  </Link>
+                  <button
+                    onClick={() => setIsAddPersonOpen(true)}
+                    className="p-2 rounded-lg bg-emerald-600 text-white shadow-sm"
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={logout}
+                    title="Sign Out"
+                    className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Mobile Actions: Add button + Hamburger Menu Icon */}
+                <div className="flex items-center gap-1.5 sm:hidden">
+                  <button
+                    onClick={() => setIsAddPersonOpen(true)}
+                    aria-label="Quick Add Person"
+                    className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-colors"
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                  </button>
+
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle Mobile Navigation Menu"
+                    className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                  >
+                    {isMobileMenuOpen ? (
+                      <X className="w-6 h-6 text-slate-800" />
+                    ) : (
+                      <Menu className="w-6 h-6 text-slate-800" />
+                    )}
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
 
         {/* Mobile Dropdown Menu */}
-        {isMobileMenuOpen && (
+        {isMobileMenuOpen && isAuthenticated && (
           <div className="sm:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-5 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-150">
+            {/* User Profile Info Card in Mobile Menu */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3 mb-2">
+              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
+                SR
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-bold text-slate-800 block truncate">
+                  {user?.name || "Saif Ur Rehman"}
+                </span>
+                <span className="text-[11px] text-slate-500 block truncate">
+                  {user?.email || "saifurrehman@gmail.com"}
+                </span>
+              </div>
+            </div>
+
             <Link
               href="/"
               onClick={() => setIsMobileMenuOpen(false)}
@@ -138,7 +228,7 @@ export default function Navbar() {
               <span>Persons &amp; Contributor Accounts</span>
             </Link>
 
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 space-y-2">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -149,23 +239,35 @@ export default function Navbar() {
                 <PlusCircle className="w-4 h-4" />
                 <span>Add New Person</span>
               </button>
+
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  logout();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-sm font-semibold transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         )}
       </header>
 
       {/* Global Quick Add Person Modal */}
-      <PersonModal
-        isOpen={isAddPersonOpen}
-        onClose={() => setIsAddPersonOpen(false)}
-        onSuccess={() => {
-          setIsAddPersonOpen(false);
-          // Reload current page if on dashboard or persons list
-          if (typeof window !== "undefined") {
-            window.location.reload();
-          }
-        }}
-      />
+      {isAuthenticated && (
+        <PersonModal
+          isOpen={isAddPersonOpen}
+          onClose={() => setIsAddPersonOpen(false)}
+          onSuccess={() => {
+            setIsAddPersonOpen(false);
+            if (typeof window !== "undefined") {
+              window.location.reload();
+            }
+          }}
+        />
+      )}
     </>
   );
 }
