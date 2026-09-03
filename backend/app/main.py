@@ -23,12 +23,15 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:3001",
     "http://127.0.0.1:3001",
-    "*",  # Allow all during development and Vercel preview deployments
+    "https://usmania-children-home.vercel.app",
+    "https://usmania-children-home-expense-track.vercel.app",
+    "*",  # Allow all origins
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
