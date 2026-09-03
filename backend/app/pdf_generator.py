@@ -165,15 +165,15 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         textColor=colors.HexColor("#1e293b"),
         alignment=2,
     )
-    grand_total_label = ParagraphStyle(
-        name="GrandTotalLabel",
+    total_label_style = ParagraphStyle(
+        name="TotalLabelStyle",
         fontName="Helvetica-Bold",
         fontSize=9,
         leading=12,
         textColor=colors.HexColor("#0f766e"),
     )
-    grand_total_amount = ParagraphStyle(
-        name="GrandTotalAmount",
+    total_amount_style = ParagraphStyle(
+        name="TotalAmountStyle",
         fontName="Helvetica-Bold",
         fontSize=9.5,
         leading=12.5,
@@ -312,14 +312,14 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
                 Paragraph(item.note or "—", table_cell_muted),
             ])
 
-    # Grand total row: Span columns 0 to 4 for clean one-line label, column 5 for amount, 6-7 empty
+    # Total row: Span columns 0 to 4 for clean one-line label, column 5 for amount, 6-7 empty
     table_data.append([
-        Paragraph("<b>GRAND TOTAL</b>", grand_total_label),
-        Paragraph(f"<b>Total Spent ({len(entries)} items recorded)</b>", grand_total_label),
+        Paragraph(f"<b>Total Spent ({len(entries)} items recorded)</b>", total_label_style),
         "",
         "",
         "",
-        Paragraph(f"<b>{format_currency(total_spent)}</b>", grand_total_amount),
+        "",
+        Paragraph(f"<b>{format_currency(total_spent)}</b>", total_amount_style),
         "",
         ""
     ])
@@ -337,7 +337,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ("GRID", (0, 0), (-1, -2), 0.5, colors.HexColor("#e2e8f0")),
         ("LINEBELOW", (0, -1), (-1, -1), 1.5, colors.HexColor("#0f766e")),
         ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f1f5f9")),
-        ("SPAN", (1, -1), (4, -1)),
+        ("SPAN", (0, -1), (4, -1)),
         ("SPAN", (6, -1), (7, -1)),
     ]
 
