@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
 
 class PersonBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=200, description="Name of donor / person")
+    name: str = Field(..., min_length=1, max_length=200, description="Name of person")
     contact: Optional[str] = Field(default=None, max_length=100, description="Phone or contact info")
     total_amount_given: float = Field(default=0.0, ge=0.0, description="Total amount contributed")
 
@@ -96,7 +96,7 @@ class RecentEntry(EntryRead):
     person_name: str
 
 class DashboardSummary(BaseModel):
-    total_donors: int
+    total_persons: int
     total_amount_collected: float
     total_spent: float
     total_remaining: float

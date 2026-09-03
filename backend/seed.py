@@ -1,5 +1,5 @@
 """
-Seed script to populate initial sample donors and expense entries
+Seed script to populate initial sample persons and expense entries
 for Usmania Children Home.
 Run with:
     python seed.py
@@ -18,9 +18,9 @@ def seed_data():
             print("Database already contains data. Skipping seeding.")
             return
 
-        print("Seeding sample donors and expense entries for Usmania Children Home...")
+        print("Seeding sample persons and expense entries for Usmania Children Home...")
 
-        # Donor 1
+        # Person 1
         p1 = Person(
             name="Haji Muhammad Rashid",
             contact="0300-4567891",
@@ -62,7 +62,7 @@ def seed_data():
         ]
         session.add_all(entries_p1)
 
-        # Donor 2
+        # Person 2
         p2 = Person(
             name="Syed Tariq Mahmood",
             contact="0321-7654321",
@@ -95,7 +95,7 @@ def seed_data():
         ]
         session.add_all(entries_p2)
 
-        # Donor 3
+        # Person 3
         p3 = Person(
             name="Al-Khidmat Welfare Trust",
             contact="042-35800000",

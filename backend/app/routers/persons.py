@@ -46,7 +46,7 @@ def create_person(payload: PersonCreate, session: Session = Depends(get_session)
 
 @router.get("", response_model=List[PersonRead])
 def list_persons(
-    search: Optional[str] = Query(None, description="Search by donor name or contact"),
+    search: Optional[str] = Query(None, description="Search by person name or contact"),
     session: Session = Depends(get_session),
 ):
     query = select(Person)
@@ -181,7 +181,7 @@ def export_person_pdf(person_id: int, session: Session = Depends(get_session)):
 
     # Sanitize name for filename
     safe_name = "".join(c for c in person.name if c.isalnum() or c in (" ", "_", "-")).strip().replace(" ", "_")
-    filename = f"Usmania_Children_Home_Statement_{safe_name}_ID{person.id}.pdf"
+    filename = f"Usmania_Children_Home_Balance_Statement_{safe_name}_ID{person.id}.pdf"
 
     return StreamingResponse(
         pdf_buffer,

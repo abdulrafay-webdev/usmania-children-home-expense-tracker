@@ -30,7 +30,7 @@ export interface RecentEntry extends Entry {
 }
 
 export interface DashboardSummary {
-  total_donors: number;
+  total_persons: number;
   total_amount_collected: number;
   total_spent: number;
   total_remaining: number;
@@ -165,7 +165,7 @@ export const api = {
     const a = document.createElement("a");
     a.href = downloadUrl;
     const cleanName = personName.replace(/[^a-zA-Z0-9_-]/g, "_");
-    a.download = `Usmania_Children_Home_Statement_${cleanName}_ID${personId}.pdf`;
+    a.download = `Usmania_Children_Home_Balance_Statement_${cleanName}_ID${personId}.pdf`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(downloadUrl);

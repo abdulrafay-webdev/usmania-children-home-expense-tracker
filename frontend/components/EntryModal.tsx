@@ -109,7 +109,7 @@ export default function EntryModal({
               {entryToEdit ? "Edit Expense Entry" : "Add Expense Entry"}
             </h2>
             <p className="text-xs text-slate-500">
-              Record an expenditure item under this donor&apos;s funds
+              Record an expenditure item under this person&apos;s funds
             </p>
           </div>
           <button

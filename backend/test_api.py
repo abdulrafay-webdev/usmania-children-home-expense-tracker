@@ -85,8 +85,8 @@ def test_full_flow():
     res_summary = client.get("/summary")
     assert res_summary.status_code == 200
     summary = res_summary.json()
-    print(f"Summary: Donors={summary['total_donors']}, Collected={summary['total_amount_collected']}, Spent={summary['total_spent']}, Remaining={summary['total_remaining']}")
-    assert summary["total_donors"] >= 1
+    print(f"Summary: Persons={summary['total_persons']}, Collected={summary['total_amount_collected']}, Spent={summary['total_spent']}, Remaining={summary['total_remaining']}")
+    assert summary["total_persons"] >= 1
     assert summary["total_amount_collected"] >= 150000.0
 
     print("\n--- 8. Testing PDF Export Endpoint ---")

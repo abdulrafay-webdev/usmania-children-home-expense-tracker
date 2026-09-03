@@ -1,6 +1,6 @@
 # Usmania Children Home — Expense & Donation Tracker
 
-A full-stack web application designed for **Usmania Children Home** to manage donor contributions, record itemized line-item expenditures, calculate real-time remaining balances, and generate professional PDF statements.
+A full-stack web application designed for **Usmania Children Home** to manage person contributions, record itemized line-item expenditures, calculate real-time remaining balances, and generate professional PDF balance statements.
 
 ---
 
@@ -42,16 +42,16 @@ A full-stack web application designed for **Usmania Children Home** to manage do
 │
 ├── frontend/
 │   ├── app/
-│   │   ├── page.tsx             # Dashboard (Total donors, collected, spent, remaining)
+│   │   ├── page.tsx             # Dashboard (Total persons, collected, spent, remaining)
 │   │   ├── layout.tsx           # Global layout with branding & navbar
 │   │   ├── globals.css          # Tailwind CSS styles
 │   │   ├── persons/
-│   │   │   ├── page.tsx         # Donors list page (search, sort, actions)
+│   │   │   ├── page.tsx         # Persons list page (search, sort, actions)
 │   │   │   └── [id]/
 │   │   │       └── page.tsx     # Person detail, live balance & entries table
 │   ├── components/
 │   │   ├── Navbar.tsx           # Responsive navigation bar
-│   │   ├── PersonModal.tsx      # Add & edit donor modal with validation
+│   │   ├── PersonModal.tsx      # Add & edit person modal with validation
 │   │   ├── EntryModal.tsx       # Add & edit expense entry modal with live line total
 │   │   └── ConfirmModal.tsx     # Reusable confirmation dialog for deletions
 │   ├── lib/
@@ -113,7 +113,7 @@ Before deploying or running with a remote database, obtain the following credent
    ```bash
    pip install -r requirements.txt
    ```
-4. (Optional) Populate sample donors and expenses:
+4. (Optional) Populate sample persons and expenses:
    ```bash
    python seed.py
    ```
@@ -155,7 +155,7 @@ python test_api.py
 
 Tests verify:
 1. Root health status endpoint (`/`)
-2. Creating a donor (`POST /persons`)
+2. Creating a person (`POST /persons`)
 3. Validation preventing negative amounts or empty names (HTTP 422)
 4. Adding itemized expense entries (`POST /persons/{id}/entries`)
 5. Retrieving person detail and live calculated balances (`GET /persons/{id}`)
@@ -163,7 +163,7 @@ Tests verify:
 7. Aggregate dashboard summary calculations (`GET /summary`)
 8. Backend PDF statement generation and download headers (`GET /persons/{id}/pdf`)
 9. Entry deletion and balance restoration (`DELETE /entries/{id}`)
-10. Donor deletion with cascade entry removal (`DELETE /persons/{id}`)
+10. Person deletion with cascade entry removal (`DELETE /persons/{id}`)
 
 ---
 

@@ -61,14 +61,14 @@ export default function DashboardPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm rounded-xl transition-all shadow-md active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Register New Donor</span>
+              <span>Register New Person</span>
             </button>
             <Link
               href="/persons"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium text-sm rounded-xl transition-colors backdrop-blur border border-white/10"
             >
               <Users className="w-4 h-4" />
-              <span>View All Donors</span>
+              <span>View All Persons</span>
             </Link>
             <button
               onClick={fetchSummary}
@@ -117,11 +117,11 @@ export default function DashboardPage() {
         </div>
       ) : summary ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {/* Card 1: Total Donors */}
+          {/* Card 1: Total Persons */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Total Donors
+                Total Persons
               </span>
               <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                 <Users className="w-5 h-5" />
@@ -129,10 +129,10 @@ export default function DashboardPage() {
             </div>
             <div className="mt-3">
               <span className="text-2xl sm:text-3xl font-bold text-slate-900">
-                {summary.total_donors}
+                {summary.total_persons}
               </span>
               <p className="text-xs text-slate-500 mt-1">
-                Active contributors registered
+                Active persons registered
               </p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                 {formatCurrency(summary.total_amount_collected)}
               </span>
               <p className="text-xs text-slate-500 mt-1">
-                Sum of all donor allocations
+                Sum of all person allocations
               </p>
             </div>
           </div>
@@ -231,17 +231,17 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      {/* Two Column Layout: Recent Donors + Recent Expense Entries */}
+      {/* Two Column Layout: Recent Persons + Recent Expense Entries */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-        {/* Recent Donors */}
+        {/* Recent Persons */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-base font-semibold text-slate-900">
-                Recent Donors &amp; Persons
+                Recent Persons
               </h2>
               <p className="text-xs text-slate-500">
-                Latest contributors to Usmania Children Home
+                Latest registered persons for Usmania Children Home
               </p>
             </div>
             <Link
@@ -300,12 +300,12 @@ export default function DashboardPage() {
           ) : (
             <div className="text-center py-8 text-slate-500">
               <Users className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-              <p className="text-sm">No donors registered yet.</p>
+              <p className="text-sm">No persons registered yet.</p>
               <button
                 onClick={() => setIsAddPersonOpen(true)}
                 className="mt-3 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
               >
-                + Add your first donor
+                + Add your first person
               </button>
             </div>
           )}
@@ -349,7 +349,7 @@ export default function DashboardPage() {
                         {entry.item_name}
                       </p>
                       <p className="text-xs text-slate-500 truncate">
-                        Donor:{" "}
+                        Person:{" "}
                         <Link
                           href={`/persons/${entry.person_id}`}
                           className="font-medium text-emerald-700 hover:underline"
@@ -376,14 +376,14 @@ export default function DashboardPage() {
               <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
               <p className="text-sm">No expenses recorded yet.</p>
               <p className="text-xs text-slate-400 mt-1">
-                Open a donor&apos;s page to log expenditures.
+                Open a person&apos;s page to log expenditures.
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Add Donor Modal */}
+      {/* Add Person Modal */}
       <PersonModal
         isOpen={isAddPersonOpen}
         onClose={() => setIsAddPersonOpen(false)}

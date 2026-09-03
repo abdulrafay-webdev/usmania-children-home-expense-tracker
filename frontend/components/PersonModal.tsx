@@ -44,7 +44,7 @@ export default function PersonModal({
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError("Donor name is required.");
+      setError("Person name is required.");
       return;
     }
 
@@ -73,7 +73,7 @@ export default function PersonModal({
       }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save donor record");
+      setError(err instanceof Error ? err.message : "Failed to save person record");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,12 +86,12 @@ export default function PersonModal({
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">
-              {personToEdit ? "Edit Donor / Person" : "Add New Donor"}
+              {personToEdit ? "Edit Person" : "Add New Person"}
             </h2>
             <p className="text-xs text-slate-500">
               {personToEdit
-                ? "Update contributor details or total donation amount"
-                : "Register a contributor for Usmania Children Home"}
+                ? "Update person details or total contribution amount"
+                : "Register a person for Usmania Children Home"}
             </p>
           </div>
           <button
@@ -113,7 +113,7 @@ export default function PersonModal({
           {/* Name */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Donor / Contributor Name <span className="text-red-500">*</span>
+              Person Name <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -184,7 +184,7 @@ export default function PersonModal({
               className="inline-flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm disabled:opacity-50"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>{personToEdit ? "Update Donor" : "Save Donor"}</span>
+              <span>{personToEdit ? "Update Person" : "Save Person"}</span>
             </button>
           </div>
         </form>

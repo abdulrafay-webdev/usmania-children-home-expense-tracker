@@ -16,7 +16,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Usmania Children Home — Expense & Donation Tracker",
-  description: "Manage donor contributions, track line-item expenses, and generate PDF balance statements for Usmania Children Home",
+  description: "Manage person contributions, track line-item expenses, and generate PDF balance statements for Usmania Children Home",
 };
 
 export default function RootLayout({

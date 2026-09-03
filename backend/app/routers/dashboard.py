@@ -13,7 +13,7 @@ def get_dashboard_summary(session: Session = Depends(get_session)):
     persons = session.exec(select(Person).order_by(Person.created_at.desc())).all()
     entries = session.exec(select(Entry).order_by(Entry.created_at.desc())).all()
 
-    total_donors = len(persons)
+    total_persons = len(persons)
     total_amount_collected = sum(p.total_amount_given for p in persons)
     total_spent = sum(e.quantity * e.price for e in entries)
     total_remaining = total_amount_collected - total_spent
@@ -58,7 +58,7 @@ def get_dashboard_summary(session: Session = Depends(get_session)):
         )
 
     return DashboardSummary(
-        total_donors=total_donors,
+        total_persons=total_persons,
         total_amount_collected=round(total_amount_collected, 2),
         total_spent=round(total_spent, 2),
         total_remaining=round(total_remaining, 2),

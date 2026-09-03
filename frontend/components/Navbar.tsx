@@ -59,7 +59,7 @@ export default function Navbar() {
                 }`}
               >
                 <Users className="w-4 h-4" />
-                <span>Donors</span>
+                <span>Persons</span>
               </Link>
 
               <button
@@ -67,7 +67,7 @@ export default function Navbar() {
                 className="ml-2 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-sm transition-all active:scale-95"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Donor</span>
+                <span className="hidden sm:inline">Add Person</span>
               </button>
             </nav>
           </div>

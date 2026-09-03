@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
-from reportlab.lib.units import inch
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -44,7 +43,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setLineWidth(0.75)
         self.line(40, 45, 572, 45)
         
-        footer_text = "Usmania Children Home • Donor Expense & Contribution Statement • Official Record"
+        footer_text = "Usmania Children Home • Balance Statement • Official Record"
         self.drawString(40, 32, footer_text)
         
         page_str = f"Page {self._pageNumber} of {page_count}"
@@ -80,8 +79,8 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     subtitle_style = ParagraphStyle(
         name="OrgSubtitle",
         fontName="Helvetica-Bold",
-        fontSize=11,
-        leading=14,
+        fontSize=12,
+        leading=15,
         textColor=colors.HexColor("#334155"),
     )
     meta_style = ParagraphStyle(
@@ -155,12 +154,12 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     now_str = datetime.now().strftime("%B %d, %Y - %I:%M %p")
     header_left = [
         Paragraph("USMANIA CHILDREN HOME", title_style),
-        Spacer(1, 2),
-        Paragraph("DONOR EXPENSE & BALANCE STATEMENT", subtitle_style),
+        Spacer(1, 3),
+        Paragraph("BALANCE STATEMENT", subtitle_style),
     ]
     header_right = [
         Paragraph(f"<b>Date:</b> {now_str}", meta_style),
-        Paragraph(f"<b>Donor ID:</b> #{person.id}", meta_style),
+        Paragraph(f"<b>Person ID:</b> #{person.id}", meta_style),
         Paragraph("<b>Status:</b> Active Account", meta_style),
     ]
     header_table = Table(
@@ -178,22 +177,22 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     story.append(Spacer(1, 10))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0f766e"), spaceAfter=14))
 
-    # 2. Donor Summary & Financial Overview Cards
+    # 2. Person Summary & Financial Overview Cards
     total_spent = sum(entry.quantity * entry.price for entry in entries)
     remaining_balance = person.total_amount_given - total_spent
 
-    donor_created_str = person.created_at.strftime("%b %d, %Y") if person.created_at else "N/A"
+    person_created_str = person.created_at.strftime("%b %d, %Y") if person.created_at else "N/A"
     contact_str = person.contact if person.contact else "Not provided"
 
-    donor_info = [
-        Paragraph(f"<b>Donor / Person Name:</b> {person.name}", card_val_style),
+    person_info = [
+        Paragraph(f"<b>Person Name:</b> {person.name}", card_val_style),
         Paragraph(f"<b>Contact / Phone:</b> {contact_str}", card_label_style),
-        Paragraph(f"<b>Record Created:</b> {donor_created_str}", card_label_style),
+        Paragraph(f"<b>Record Created:</b> {person_created_str}", card_label_style),
     ]
 
     card_data = [
         [
-            donor_info,
+            person_info,
             [
                 Paragraph("TOTAL GIVEN", card_label_style),
                 Spacer(1, 2),

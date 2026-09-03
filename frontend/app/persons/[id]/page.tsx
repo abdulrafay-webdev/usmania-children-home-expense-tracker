@@ -55,7 +55,7 @@ export default function PersonDetailPage() {
 
   const fetchPersonDetail = useCallback(async () => {
     if (isNaN(personId)) {
-      setError("Invalid donor ID.");
+      setError("Invalid person ID.");
       setIsLoading(false);
       return;
     }
@@ -65,7 +65,7 @@ export default function PersonDetailPage() {
       const data = await api.getPerson(personId);
       setPerson(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load donor details");
+      setError(err instanceof Error ? err.message : "Failed to load person details");
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +164,7 @@ export default function PersonDetailPage() {
       await api.deletePerson(person.id);
       router.push("/persons");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to delete donor record");
+      alert(err instanceof Error ? err.message : "Failed to delete person record");
       setIsDeletingPerson(false);
     }
   };
@@ -203,16 +203,16 @@ export default function PersonDetailPage() {
     return (
       <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-lg mx-auto my-12">
         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-slate-900">Donor Not Found</h2>
+        <h2 className="text-xl font-bold text-slate-900">Person Not Found</h2>
         <p className="text-sm text-slate-500 mt-2 mb-6">
-          {error || "The requested donor account could not be found or has been removed."}
+          {error || "The requested person account could not be found or has been removed."}
         </p>
         <Link
           href="/persons"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-colors shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Return to Donors List</span>
+          <span>Return to Persons List</span>
         </Link>
       </div>
     );
@@ -229,15 +229,15 @@ export default function PersonDetailPage() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Donors List</span>
+          <span>Back to Persons List</span>
         </Link>
         <span className="text-xs text-slate-400">Account #{person.id}</span>
       </div>
 
-      {/* Main Donor Profile Card */}
+      {/* Main Person Profile Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          {/* Left: Donor Details */}
+          {/* Left: Person Details */}
           <div className="flex items-start sm:items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-md shadow-emerald-200">
               {person.name.charAt(0).toUpperCase()}
@@ -254,7 +254,7 @@ export default function PersonDetailPage() {
                       : "bg-emerald-100 text-emerald-800"
                   }`}
                 >
-                  {isDeficit ? "Over-budget" : "Active Donor"}
+                  {isDeficit ? "Over-budget" : "Active Person"}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-1.5">
@@ -286,7 +286,7 @@ export default function PersonDetailPage() {
               ) : (
                 <Download className="w-4 h-4 text-slate-600" />
               )}
-              <span>Download PDF Statement</span>
+              <span>Download Balance Statement</span>
             </button>
 
             <button
@@ -302,7 +302,7 @@ export default function PersonDetailPage() {
 
             <button
               onClick={() => setIsEditPersonOpen(true)}
-              title="Edit Donor Profile"
+              title="Edit Person Profile"
               className="p-2.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
             >
               <Edit2 className="w-4 h-4" />
@@ -310,7 +310,7 @@ export default function PersonDetailPage() {
 
             <button
               onClick={() => setIsDeletePersonOpen(true)}
-              title="Delete Donor Record"
+              title="Delete Person Record"
               className="p-2.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors border border-slate-200"
             >
               <Trash2 className="w-4 h-4" />
@@ -336,7 +336,7 @@ export default function PersonDetailPage() {
               {formatCurrency(person.total_amount_given)}
             </span>
             <p className="text-xs text-slate-500 mt-1">
-              Initial donor allocation
+              Initial person allocation
             </p>
           </div>
         </div>
@@ -425,7 +425,7 @@ export default function PersonDetailPage() {
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Line items paid from this donor&apos;s allocated donation
+              Line items paid from this person&apos;s allocated funds
             </p>
           </div>
 
@@ -656,9 +656,9 @@ export default function PersonDetailPage() {
         onClose={() => setIsDeletePersonOpen(false)}
         onConfirm={handleDeletePersonConfirm}
         isLoading={isDeletingPerson}
-        title="Delete Donor Account?"
+        title="Delete Person Record?"
         message={`Are you sure you want to delete ${person.name}? All ${person.entries.length} expense entries under this person will be permanently removed.`}
-        confirmText="Delete Donor & Entries"
+        confirmText="Delete Person & Entries"
         isDestructive={true}
       />
     </div>
