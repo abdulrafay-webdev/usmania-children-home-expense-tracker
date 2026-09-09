@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, ADMIN_ACCOUNTS } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import {
   HeartHandshake,
   Mail,
@@ -12,7 +12,6 @@ import {
   Loader2,
   AlertCircle,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -24,12 +23,6 @@ export default function LoginPage() {
 
   const { login } = useAuth();
   const router = useRouter();
-
-  const handleFillAccount = (emailVal: string, passVal: string) => {
-    setEmail(emailVal);
-    setPassword(passVal);
-    setError(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,30 +120,6 @@ export default function LoginPage() {
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-              </div>
-            </div>
-
-            {/* Quick Fill Buttons for All 3 Accounts */}
-            <div className="pt-1">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Quick Select Account:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                {ADMIN_ACCOUNTS.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => handleFillAccount(acc.email, acc.password)}
-                    className={`inline-flex items-center justify-center gap-1 py-2 px-2.5 text-xs font-medium rounded-xl border transition-all ${
-                      email.toLowerCase() === acc.email.toLowerCase()
-                        ? "bg-emerald-100 text-emerald-900 border-emerald-300 font-semibold shadow-xs"
-                        : "text-slate-700 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-800 border-slate-200"
-                    }`}
-                  >
-                    <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span className="truncate">{acc.name.split(" ")[0]}</span>
-                  </button>
-                ))}
               </div>
             </div>
 
