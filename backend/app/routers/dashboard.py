@@ -4,14 +4,31 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import Person, Entry
 from app.schemas import DashboardSummary, RecentEntry, PersonRead
+from app.routers.auth import get_current_user_email
 
 router = APIRouter(tags=["Dashboard"])
 
 
 @router.get("/summary", response_model=DashboardSummary)
-def get_dashboard_summary(session: Session = Depends(get_session)):
-    persons = session.exec(select(Person).order_by(Person.created_at.desc())).all()
-    entries = session.exec(select(Entry).order_by(Entry.created_at.desc())).all()
+def get_dashboard_summary(
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    persons = session.exec(
+        select(Person)
+        .where(Person.created_by == current_user_email)
+        .order_by(Person.created_at.desc())
+    ).all()
+
+    person_ids = [p.id for p in persons if p.id is not None]
+    if person_ids:
+        entries = session.exec(
+            select(Entry)
+            .where(Entry.person_id.in_(person_ids))
+            .order_by(Entry.created_at.desc())
+        ).all()
+    else:
+        entries = []
 
     total_persons = len(persons)
     total_amount_collected = sum(p.total_amount_given for p in persons)

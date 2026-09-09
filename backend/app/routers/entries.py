@@ -3,6 +3,7 @@ from sqlmodel import Session
 from app.database import get_session
 from app.models import Person, Entry
 from app.schemas import EntryCreate, EntryUpdate, EntryRead
+from app.routers.auth import get_current_user_email
 
 router = APIRouter(tags=["Entries"])
 
@@ -29,10 +30,13 @@ def to_entry_read(entry: Entry) -> EntryRead:
     status_code=status.HTTP_201_CREATED,
 )
 def create_entry(
-    person_id: int, payload: EntryCreate, session: Session = Depends(get_session)
+    person_id: int,
+    payload: EntryCreate,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
 ):
     person = session.get(Person, person_id)
-    if not person:
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person with ID {person_id} not found",
@@ -57,10 +61,20 @@ def create_entry(
 
 @router.put("/entries/{entry_id}", response_model=EntryRead)
 def update_entry(
-    entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)
+    entry_id: int,
+    payload: EntryUpdate,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
 ):
     entry = session.get(Entry, entry_id)
     if not entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Entry with ID {entry_id} not found",
+        )
+
+    person = session.get(Person, entry.person_id)
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Entry with ID {entry_id} not found",
@@ -89,9 +103,20 @@ def update_entry(
 
 
 @router.delete("/entries/{entry_id}", status_code=status.HTTP_200_OK)
-def delete_entry(entry_id: int, session: Session = Depends(get_session)):
+def delete_entry(
+    entry_id: int,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
     entry = session.get(Entry, entry_id)
     if not entry:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Entry with ID {entry_id} not found",
+        )
+
+    person = session.get(Person, entry.person_id)
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Entry with ID {entry_id} not found",

@@ -24,12 +24,35 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_KEY_USER = "uch_auth_user";
 const STORAGE_KEY_TOKEN = "uch_auth_token";
 
-export const ADMIN_CREDENTIALS = {
-  email: "saifurrehman@gmail.com",
-  password: "Saif@1234",
-  name: "Saif Ur Rehman",
-  role: "Administrator",
-};
+export interface AdminAccount {
+  email: string;
+  password: string;
+  name: string;
+  role: string;
+}
+
+export const ADMIN_ACCOUNTS: AdminAccount[] = [
+  {
+    email: "saifurrehman@gmail.com",
+    password: "Saif@1234",
+    name: "Saif Ur Rehman",
+    role: "Administrator",
+  },
+  {
+    email: "kaleemullah@gmail.com",
+    password: "Kaleemullah@1234",
+    name: "Kaleemullah",
+    role: "Administrator",
+  },
+  {
+    email: "asadullah@gmail.com",
+    password: "Asadullah@1234",
+    name: "Asadullah",
+    role: "Administrator",
+  },
+];
+
+export const ADMIN_CREDENTIALS = ADMIN_ACCOUNTS[0];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -79,14 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 2. Client-side deterministic validation fallback
-    if (
-      cleanEmail === ADMIN_CREDENTIALS.email.toLowerCase() &&
-      cleanPassword === ADMIN_CREDENTIALS.password
-    ) {
+    const matchedAccount = ADMIN_ACCOUNTS.find(
+      (acc) =>
+        acc.email.toLowerCase() === cleanEmail && acc.password === cleanPassword
+    );
+    if (matchedAccount) {
       const fallbackUser: UserProfile = {
-        email: ADMIN_CREDENTIALS.email,
-        name: ADMIN_CREDENTIALS.name,
-        role: ADMIN_CREDENTIALS.role,
+        email: matchedAccount.email,
+        name: matchedAccount.name,
+        role: matchedAccount.role,
       };
       const fallbackToken = "uch_admin_session_" + Date.now();
       setUser(fallbackUser);

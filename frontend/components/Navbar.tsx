@@ -16,6 +16,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import PersonModal from "./PersonModal";
 
+function getInitials(name?: string): string {
+  if (!name) return "UCH";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
@@ -102,11 +109,11 @@ export default function Navbar() {
                   {/* User Profile Badge */}
                   <div className="flex items-center gap-2 pl-1">
                     <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
-                      SR
+                      {getInitials(user?.name)}
                     </div>
                     <div className="text-left hidden xl:block">
                       <span className="text-xs font-semibold text-slate-800 block leading-tight">
-                        {user?.name || "Saif Ur Rehman"}
+                        {user?.name || "Administrator"}
                       </span>
                       <span className="text-[10px] text-slate-500 block leading-tight">
                         {user?.email || "saifurrehman@gmail.com"}
@@ -190,11 +197,11 @@ export default function Navbar() {
             {/* User Profile Info Card in Mobile Menu */}
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3 mb-2">
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
-                SR
+                {getInitials(user?.name)}
               </div>
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-bold text-slate-800 block truncate">
-                  {user?.name || "Saif Ur Rehman"}
+                  {user?.name || "Administrator"}
                 </span>
                 <span className="text-[11px] text-slate-500 block truncate">
                   {user?.email || "saifurrehman@gmail.com"}

@@ -12,6 +12,7 @@ class Person(SQLModel, table=True):
     name: str = Field(index=True)
     contact: Optional[str] = Field(default=None)
     total_amount_given: float = Field(default=0.0, ge=0.0)
+    created_by: str = Field(default="saifurrehman@gmail.com", index=True)
     created_at: datetime = Field(default_factory=utc_now)
 
     entries: List["Entry"] = Relationship(back_populates="person", cascade_delete=True)

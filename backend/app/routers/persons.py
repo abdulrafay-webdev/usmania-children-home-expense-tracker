@@ -12,6 +12,7 @@ from app.schemas import (
     EntryRead,
 )
 from app.pdf_generator import generate_person_pdf
+from app.routers.auth import get_current_user_email
 
 router = APIRouter(prefix="/persons", tags=["Persons"])
 
@@ -25,6 +26,7 @@ def compute_person_read(person: Person, entries: List[Entry]) -> PersonRead:
         contact=person.contact,
         total_amount_given=person.total_amount_given,
         created_at=person.created_at,
+        created_by=getattr(person, "created_by", "saifurrehman@gmail.com") or "saifurrehman@gmail.com",
         total_spent=round(total_spent, 2),
         remaining_balance=round(remaining, 2),
         entries_count=len(entries),
@@ -32,11 +34,17 @@ def compute_person_read(person: Person, entries: List[Entry]) -> PersonRead:
 
 
 @router.post("", response_model=PersonRead, status_code=status.HTTP_201_CREATED)
-def create_person(payload: PersonCreate, session: Session = Depends(get_session)):
+def create_person(
+    payload: PersonCreate,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
+    owner = payload.created_by or current_user_email
     person = Person(
         name=payload.name,
         contact=payload.contact,
         total_amount_given=payload.total_amount_given,
+        created_by=owner,
     )
     session.add(person)
     session.commit()
@@ -48,8 +56,9 @@ def create_person(payload: PersonCreate, session: Session = Depends(get_session)
 def list_persons(
     search: Optional[str] = Query(None, description="Search by person name or contact"),
     session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
 ):
-    query = select(Person)
+    query = select(Person).where(Person.created_by == current_user_email)
     if search:
         search_pattern = f"%{search.strip()}%"
         query = query.where(
@@ -68,9 +77,13 @@ def list_persons(
 
 
 @router.get("/{person_id}", response_model=PersonDetailRead)
-def get_person(person_id: int, session: Session = Depends(get_session)):
+def get_person(
+    person_id: int,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
     person = session.get(Person, person_id)
-    if not person:
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person with ID {person_id} not found",
@@ -116,10 +129,13 @@ def get_person(person_id: int, session: Session = Depends(get_session)):
 
 @router.put("/{person_id}", response_model=PersonRead)
 def update_person(
-    person_id: int, payload: PersonUpdate, session: Session = Depends(get_session)
+    person_id: int,
+    payload: PersonUpdate,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
 ):
     person = session.get(Person, person_id)
-    if not person:
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person with ID {person_id} not found",
@@ -142,9 +158,13 @@ def update_person(
 
 
 @router.delete("/{person_id}", status_code=status.HTTP_200_OK)
-def delete_person(person_id: int, session: Session = Depends(get_session)):
+def delete_person(
+    person_id: int,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
     person = session.get(Person, person_id)
-    if not person:
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person with ID {person_id} not found",
@@ -162,9 +182,13 @@ def delete_person(person_id: int, session: Session = Depends(get_session)):
 
 
 @router.get("/{person_id}/pdf")
-def export_person_pdf(person_id: int, session: Session = Depends(get_session)):
+def export_person_pdf(
+    person_id: int,
+    session: Session = Depends(get_session),
+    current_user_email: str = Depends(get_current_user_email),
+):
     person = session.get(Person, person_id)
-    if not person:
+    if not person or person.created_by != current_user_email:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Person with ID {person_id} not found",

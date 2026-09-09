@@ -6,6 +6,7 @@ class PersonBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="Name of person")
     contact: Optional[str] = Field(default=None, max_length=100, description="Phone or contact info")
     total_amount_given: float = Field(default=0.0, ge=0.0, description="Total amount contributed")
+    created_by: Optional[str] = Field(default="saifurrehman@gmail.com", description="User email of owner")
 
     @field_validator("name")
     def name_not_empty(cls, v: str) -> str:
@@ -88,6 +89,7 @@ class PersonRead(BaseModel):
     contact: Optional[str] = None
     total_amount_given: float
     created_at: datetime
+    created_by: str = "saifurrehman@gmail.com"
     total_spent: float
     remaining_balance: float
     entries_count: int

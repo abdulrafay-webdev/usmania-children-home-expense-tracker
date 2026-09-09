@@ -83,15 +83,39 @@ const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 // Strip any trailing slash so URLs like //summary are never created (which causes 308 redirects that fail CORS preflight)
 export const API_BASE_URL = rawBaseUrl.trim().replace(/\/+$/, "");
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    try {
+      const savedUser = localStorage.getItem("uch_auth_user");
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        if (user?.email) {
+          headers["X-User-Email"] = user.email;
+        }
+      }
+      const savedToken = localStorage.getItem("uch_auth_token");
+      if (savedToken) {
+        headers["Authorization"] = `Bearer ${savedToken}`;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return headers;
+}
+
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const url = `${API_BASE_URL}${cleanEndpoint}`;
+  const authHeaders = getAuthHeaders();
   let response: Response;
   try {
     response = await fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders,
         ...options?.headers,
       },
     });
@@ -171,8 +195,12 @@ export const api = {
   uploadInvoice: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append("file", file);
+    const authHeaders = getAuthHeaders();
     const response = await fetch(`${API_BASE_URL}/upload/invoice`, {
       method: "POST",
+      headers: {
+        ...authHeaders,
+      },
       body: formData,
     });
     if (!response.ok) {
@@ -187,7 +215,12 @@ export const api = {
 
   downloadPdf: async (personId: number, personName: string): Promise<void> => {
     const url = `${API_BASE_URL}/persons/${personId}/pdf`;
-    const response = await fetch(url);
+    const authHeaders = getAuthHeaders();
+    const response = await fetch(url, {
+      headers: {
+        ...authHeaders,
+      },
+    });
     if (!response.ok) {
       throw new Error(`Failed to generate PDF: ${response.statusText}`);
     }

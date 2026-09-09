@@ -44,9 +44,19 @@ def init_db():
                     session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN invoice_file_id VARCHAR")
                 except Exception:
                     pass
+                try:
+                    session.connection().exec_driver_sql("ALTER TABLE person ADD COLUMN created_by VARCHAR DEFAULT 'saifurrehman@gmail.com'")
+                except Exception:
+                    pass
+                try:
+                    session.connection().exec_driver_sql("UPDATE person SET created_by = 'saifurrehman@gmail.com' WHERE created_by IS NULL")
+                except Exception:
+                    pass
             else:
                 session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN IF NOT EXISTS invoice_url VARCHAR")
                 session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN IF NOT EXISTS invoice_file_id VARCHAR")
+                session.connection().exec_driver_sql("ALTER TABLE person ADD COLUMN IF NOT EXISTS created_by VARCHAR DEFAULT 'saifurrehman@gmail.com'")
+                session.connection().exec_driver_sql("UPDATE person SET created_by = 'saifurrehman@gmail.com' WHERE created_by IS NULL")
                 session.commit()
         except Exception:
             pass
