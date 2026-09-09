@@ -7,6 +7,8 @@ export interface Entry {
   price: number;
   line_total: number;
   note?: string | null;
+  invoice_url?: string | null;
+  invoice_file_id?: string | null;
   created_at: string;
 }
 
@@ -56,6 +58,8 @@ export interface CreateEntryPayload {
   item_quality?: string;
   price: number;
   note?: string;
+  invoice_url?: string | null;
+  invoice_file_id?: string | null;
 }
 
 export interface UpdateEntryPayload {
@@ -64,6 +68,15 @@ export interface UpdateEntryPayload {
   item_quality?: string;
   price?: number;
   note?: string;
+  invoice_url?: string | null;
+  invoice_file_id?: string | null;
+}
+
+export interface UploadResponse {
+  url: string;
+  file_id: string;
+  provider: string;
+  message: string;
 }
 
 const rawBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -153,6 +166,21 @@ export const api = {
     fetchJson<{ message: string }>(`/entries/${entryId}`, {
       method: "DELETE",
     }),
+
+  // Upload Invoice
+  uploadInvoice: async (file: File): Promise<UploadResponse> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await fetch(`${API_BASE_URL}/upload/invoice`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(err.detail || "Failed to upload invoice to server");
+    }
+    return response.json();
+  },
 
   // PDF
   getPdfDownloadUrl: (personId: number): string => `${API_BASE_URL}/persons/${personId}/pdf`,

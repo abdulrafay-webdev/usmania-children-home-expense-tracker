@@ -26,6 +26,8 @@ class Entry(SQLModel, table=True):
     item_quality: Optional[str] = Field(default=None)
     price: float = Field(default=0.0, ge=0.0)
     note: Optional[str] = Field(default=None)
+    invoice_url: Optional[str] = Field(default=None)
+    invoice_file_id: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
 
     person: Optional[Person] = Relationship(back_populates="entries")

@@ -20,6 +20,9 @@ import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle,
+  FileImage,
+  ExternalLink,
+  X,
 } from "lucide-react";
 import {
   api,
@@ -42,6 +45,12 @@ export default function PersonDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  // Invoice viewer modal state
+  const [activeInvoiceModal, setActiveInvoiceModal] = useState<{
+    url: string;
+    itemName: string;
+  } | null>(null);
 
   // Modals
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
@@ -491,9 +500,27 @@ export default function PersonDetailPage() {
 
                         {/* Item Name & Note */}
                         <td className="py-3.5 px-4">
-                          <span className="font-semibold text-slate-900 block">
-                            {entry.item_name}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-slate-900">
+                              {entry.item_name}
+                            </span>
+                            {entry.invoice_url && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveInvoiceModal({
+                                    url: entry.invoice_url!,
+                                    itemName: entry.item_name,
+                                  })
+                                }
+                                title="View attached invoice / bill picture"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                              >
+                                <FileImage className="w-3 h-3 text-emerald-600" />
+                                <span>Invoice</span>
+                              </button>
+                            )}
+                          </div>
                           {entry.note && (
                             <span className="text-xs text-slate-500 block mt-0.5 italic">
                               {entry.note}
@@ -619,6 +646,22 @@ export default function PersonDetailPage() {
                       <p className="text-xs text-slate-600 italic bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                         {entry.note}
                       </p>
+                    )}
+
+                    {entry.invoice_url && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActiveInvoiceModal({
+                            url: entry.invoice_url!,
+                            itemName: entry.item_name,
+                          })
+                        }
+                        className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                      >
+                        <FileImage className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>View Invoice / Bill Picture</span>
+                      </button>
                     )}
 
                     <div className="flex items-center justify-between pt-1.5 text-xs text-slate-500 border-t border-slate-50">
@@ -754,6 +797,47 @@ export default function PersonDetailPage() {
         confirmText="Delete Person & Entries"
         isDestructive={true}
       />
+
+      {/* Full Invoice Image Lightbox Modal */}
+      {activeInvoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+              <div className="min-w-0 pr-2">
+                <h3 className="font-bold text-sm sm:text-base text-slate-800 truncate">
+                  {activeInvoiceModal.itemName}
+                </h3>
+                <p className="text-xs text-slate-500">Official Invoice / Bill Receipt</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={activeInvoiceModal.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Open Full Size</span>
+                </a>
+                <button
+                  onClick={() => setActiveInvoiceModal(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-900/5 flex items-center justify-center overflow-auto max-h-[calc(92vh-60px)]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={activeInvoiceModal.url}
+                alt={activeInvoiceModal.itemName}
+                className="max-h-[75vh] w-auto object-contain rounded-lg shadow-md"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

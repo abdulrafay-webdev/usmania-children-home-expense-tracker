@@ -32,6 +32,24 @@ else:
 
 def init_db():
     SQLModel.metadata.create_all(engine)
+    # Ensure newly added columns exist on existing database tables (Neon Postgres / SQLite)
+    with Session(engine) as session:
+        try:
+            if DATABASE_URL.startswith("sqlite"):
+                try:
+                    session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN invoice_url VARCHAR")
+                except Exception:
+                    pass
+                try:
+                    session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN invoice_file_id VARCHAR")
+                except Exception:
+                    pass
+            else:
+                session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN IF NOT EXISTS invoice_url VARCHAR")
+                session.connection().exec_driver_sql("ALTER TABLE entry ADD COLUMN IF NOT EXISTS invoice_file_id VARCHAR")
+                session.commit()
+        except Exception:
+            pass
 
 def get_session():
     with Session(engine) as session:

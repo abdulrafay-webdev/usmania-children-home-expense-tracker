@@ -36,6 +36,8 @@ class EntryBase(BaseModel):
     item_quality: Optional[str] = Field(default=None, max_length=100, description="e.g. Branded, Local, High grade")
     price: float = Field(..., ge=0.0, description="Unit price or rate")
     note: Optional[str] = Field(default=None, max_length=1000, description="Optional notes")
+    invoice_url: Optional[str] = Field(default=None, description="ImageKit or uploaded invoice picture URL")
+    invoice_file_id: Optional[str] = Field(default=None, description="ImageKit file ID")
 
     @field_validator("item_name")
     def item_not_empty(cls, v: str) -> str:
@@ -53,6 +55,8 @@ class EntryUpdate(BaseModel):
     item_quality: Optional[str] = Field(default=None, max_length=100)
     price: Optional[float] = Field(default=None, ge=0.0)
     note: Optional[str] = Field(default=None, max_length=1000)
+    invoice_url: Optional[str] = Field(default=None)
+    invoice_file_id: Optional[str] = Field(default=None)
 
     @field_validator("item_name")
     def item_not_empty(cls, v: Optional[str]) -> Optional[str]:
@@ -71,6 +75,8 @@ class EntryRead(BaseModel):
     price: float
     line_total: float
     note: Optional[str] = None
+    invoice_url: Optional[str] = None
+    invoice_file_id: Optional[str] = None
     created_at: datetime
 
     class Config:

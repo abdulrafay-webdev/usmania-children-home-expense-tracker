@@ -17,6 +17,8 @@ def to_entry_read(entry: Entry) -> EntryRead:
         price=entry.price,
         line_total=round(entry.quantity * entry.price, 2),
         note=entry.note,
+        invoice_url=entry.invoice_url,
+        invoice_file_id=entry.invoice_file_id,
         created_at=entry.created_at,
     )
 
@@ -43,6 +45,8 @@ def create_entry(
         item_quality=payload.item_quality,
         price=payload.price,
         note=payload.note,
+        invoice_url=payload.invoice_url,
+        invoice_file_id=payload.invoice_file_id,
     )
     session.add(entry)
     session.commit()
@@ -72,6 +76,10 @@ def update_entry(
         entry.price = payload.price
     if payload.note is not None:
         entry.note = payload.note
+    if payload.invoice_url is not None:
+        entry.invoice_url = payload.invoice_url
+    if payload.invoice_file_id is not None:
+        entry.invoice_file_id = payload.invoice_file_id
 
     session.add(entry)
     session.commit()

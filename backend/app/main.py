@@ -1,8 +1,11 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import init_db
-from app.routers import persons, entries, dashboard, auth
+from app.routers import persons, entries, dashboard, auth, upload
+from app.imagekit_service import UPLOAD_DIR
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,8 +41,13 @@ app.add_middleware(
     expose_headers=["Content-Disposition"],
 )
 
+# Mount local uploads directory for fallback access
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 # Register routers
 app.include_router(auth.router)
+app.include_router(upload.router)
 app.include_router(persons.router)
 app.include_router(entries.router)
 app.include_router(dashboard.router)

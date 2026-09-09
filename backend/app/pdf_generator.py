@@ -1,6 +1,9 @@
 import io
+import os
+import httpx
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Tuple
+from PIL import Image as PILImage
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -11,9 +14,12 @@ from reportlab.platypus import (
     Table,
     TableStyle,
     HRFlowable,
+    PageBreak,
+    Image as RLImage,
 )
 from reportlab.pdfgen import canvas
 from app.models import Person, Entry
+from app.imagekit_service import UPLOAD_DIR
 
 class NumberedCanvas(canvas.Canvas):
     """Two-pass canvas to dynamically add page numbers and running footer."""
@@ -43,7 +49,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setLineWidth(0.75)
         self.line(40, 45, 572, 45)
         
-        footer_text = "Usmania Children Home • Balance Statement • Official Record"
+        footer_text = "Usmania Children Home • Balance Statement & Invoices • Official Record"
         self.drawString(40, 32, footer_text)
         
         page_str = f"Page {self._pageNumber} of {page_count}"
@@ -53,6 +59,67 @@ class NumberedCanvas(canvas.Canvas):
 
 def format_currency(amount: float) -> str:
     return f"Rs. {amount:,.2f}"
+
+
+def load_and_resize_image(image_source: str, max_w: float = 532.0, max_h: float = 520.0) -> Tuple[Optional[RLImage], Optional[str]]:
+    """
+    Downloads or reads an invoice image, scales it with PIL while preserving aspect ratio,
+    and returns a ReportLab RLImage flowable.
+    """
+    try:
+        img_bytes = None
+        # Check if stored in local UPLOAD_DIR
+        if "/uploads/" in image_source:
+            filename = image_source.split("/uploads/")[-1].split("?")[0]
+            local_path = os.path.join(UPLOAD_DIR, filename)
+            if os.path.exists(local_path):
+                with open(local_path, "rb") as f:
+                    img_bytes = f.read()
+
+        if not img_bytes:
+            # Fetch from CDN / ImageKit / Web
+            with httpx.Client(timeout=15.0, follow_redirects=True) as client:
+                resp = client.get(image_source)
+                if resp.status_code == 200:
+                    img_bytes = resp.content
+                else:
+                    return None, f"HTTP status {resp.status_code}"
+
+        if not img_bytes:
+            return None, "Empty image data"
+
+        # Open image with PIL
+        pil_img = PILImage.open(io.BytesIO(img_bytes))
+        orig_w, orig_h = pil_img.size
+
+        # Convert to RGB (handles RGBA, Palette, CMYK cleanly for PDF embedding)
+        if pil_img.mode in ("RGBA", "P", "LA"):
+            bg = PILImage.new("RGB", pil_img.size, (255, 255, 255))
+            if pil_img.mode == "RGBA":
+                bg.paste(pil_img, mask=pil_img.split()[-1])
+            else:
+                bg.paste(pil_img.convert("RGBA"))
+            pil_img = bg
+        elif pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+
+        out_buf = io.BytesIO()
+        pil_img.save(out_buf, format="JPEG", quality=92)
+        out_buf.seek(0)
+
+        # Scale down if larger than max dimensions, preserving aspect ratio
+        scale = min(max_w / float(orig_w), max_h / float(orig_h))
+        if scale < 1.0:
+            final_w = float(orig_w) * scale
+            final_h = float(orig_h) * scale
+        else:
+            final_w = float(orig_w)
+            final_h = float(orig_h)
+
+        return RLImage(out_buf, width=final_w, height=final_h), None
+
+    except Exception as e:
+        return None, str(e)
 
 
 def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
@@ -230,8 +297,6 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         Paragraph(f"<b>Record Created:</b> {person_created_str}", card_label_style),
     ]
 
-    # Ample width given to numbers so they never wrap into multiple lines:
-    # 172 + 120 + 120 + 120 = 532 pt
     card_data = [
         [
             person_info,
@@ -259,8 +324,8 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     summary_table = Table(card_data, colWidths=[172, 120, 120, 120])
     summary_table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#f8fafc")),
-        ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#eff6ff")), # light blue
-        ("BACKGROUND", (2, 0), (2, 0), colors.HexColor("#fff7ed")), # light amber
+        ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#eff6ff")),
+        ("BACKGROUND", (2, 0), (2, 0), colors.HexColor("#fff7ed")),
         ("BACKGROUND", (3, 0), (3, 0), colors.HexColor("#f0fdf4") if remaining_balance >= 0 else colors.HexColor("#fef2f2")),
         ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
         ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
@@ -290,8 +355,6 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ]
     ]
 
-    # Adjusted column widths so Line Total column has 95pt width (never wraps across 3 lines)
-    # Sum: 22 + 125 + 55 + 35 + 70 + 95 + 65 + 65 = 532 pt
     col_widths = [22, 125, 55, 35, 70, 95, 65, 65]
 
     if not entries:
@@ -341,14 +404,12 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ("SPAN", (6, -1), (7, -1)),
     ]
 
-    # Alternating row colors
     for i in range(1, len(table_data) - 1):
         if i % 2 == 0:
             t_style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#f8fafc")))
 
     entries_table.setStyle(TableStyle(t_style))
     story.append(entries_table)
-
     story.append(Spacer(1, 20))
 
     # 4. Sign-off / Confirmation Box
@@ -368,6 +429,100 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ("LINEABOVE", (0, 0), (-1, 0), 0.75, colors.HexColor("#cbd5e1")),
     ]))
     story.append(signoff_table)
+
+    # 5. Invoices Section: Each invoice shown on its own dedicated page
+    invoice_entries = [e for e in entries if e.invoice_url and e.invoice_url.strip()]
+    if invoice_entries:
+        for idx, entry in enumerate(invoice_entries, start=1):
+            story.append(PageBreak())
+
+            # Header on invoice page
+            inv_header_left = [
+                Paragraph("USMANIA CHILDREN HOME", title_style),
+                Spacer(1, 2),
+                Paragraph("OFFICIAL INVOICE / VOUCHER ATTACHMENT", subtitle_style),
+            ]
+            inv_header_right = [
+                Paragraph(f"<b>Person:</b> {person.name}", meta_style),
+                Paragraph(f"<b>Invoice:</b> #{idx} of {len(invoice_entries)}", meta_style),
+                Paragraph(f"<b>Item Ref:</b> #{entry.id}", meta_style),
+            ]
+            inv_header_table = Table([[inv_header_left, inv_header_right]], colWidths=[340, 192])
+            inv_header_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]))
+            story.append(inv_header_table)
+            story.append(Spacer(1, 6))
+            story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0f766e"), spaceAfter=10))
+
+            # Entry Details Box
+            line_tot = entry.quantity * entry.price
+            date_str = entry.created_at.strftime("%b %d, %Y") if entry.created_at else "N/A"
+            meta_box_data = [
+                [
+                    Paragraph(f"<b>Expense Item:</b> {entry.item_name}", card_val_style),
+                    Paragraph(f"<b>Quality / Grade:</b> {entry.item_quality or '—'}", card_label_style),
+                ],
+                [
+                    Paragraph(f"<b>Quantity:</b> {entry.quantity:g} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Unit Price:</b> {format_currency(entry.price)}", card_label_style),
+                    Paragraph(f"<b>Total Amount:</b> {format_currency(line_tot)}", card_val_balance),
+                ],
+                [
+                    Paragraph(f"<b>Note / Remarks:</b> {entry.note or 'No notes provided'}", card_label_style),
+                    Paragraph(f"<b>Purchased / Logged:</b> {date_str}", card_label_style),
+                ],
+            ]
+
+            meta_box = Table(meta_box_data, colWidths=[320, 212])
+            meta_box.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f8fafc")),
+                ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#cbd5e1")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ]))
+            story.append(meta_box)
+            story.append(Spacer(1, 10))
+
+            # Render the invoice image
+            rl_img, err_msg = load_and_resize_image(entry.invoice_url, max_w=532.0, max_h=530.0)
+            if rl_img:
+                img_table = Table([[rl_img]], colWidths=[532])
+                img_table.setStyle(TableStyle([
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                    ("TOPPADDING", (0, 0), (-1, -1), 0),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ]))
+                story.append(img_table)
+            else:
+                fail_box = Table([
+                    [
+                        Paragraph(
+                            f"<b>Invoice Attached:</b> Image could not be loaded into PDF ({err_msg}).<br/>"
+                            f"<b>Online Link:</b> {entry.invoice_url}",
+                            table_cell_muted
+                        )
+                    ]
+                ], colWidths=[532])
+                fail_box.setStyle(TableStyle([
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#fef2f2")),
+                    ("BOX", (0, 0), (-1, -1), 1, colors.HexColor("#fca5a5")),
+                    ("TOPPADDING", (0, 0), (-1, -1), 12),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 12),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+                ]))
+                story.append(fail_box)
 
     # Build document with NumberedCanvas
     doc.build(story, canvasmaker=NumberedCanvas)
