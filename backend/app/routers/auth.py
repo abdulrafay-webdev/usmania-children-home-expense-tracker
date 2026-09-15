@@ -1,7 +1,7 @@
 import hmac
 import hashlib
 from typing import Optional, Dict
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, Query
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -44,7 +44,7 @@ class LoginResponse(BaseModel):
 
 def get_current_user_email(
     x_user_email: Optional[str] = Header(None, alias="X-User-Email"),
-    user_email: Optional[str] = None,
+    user_email: Optional[str] = Query(None, alias="user_email"),
 ) -> str:
     """Extracts and normalizes the logged-in user email for data scoping."""
     candidate = (x_user_email or user_email or "saifurrehman@gmail.com").strip().lower()

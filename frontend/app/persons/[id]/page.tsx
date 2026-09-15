@@ -48,8 +48,9 @@ export default function PersonDetailPage() {
 
   // Invoice viewer modal state
   const [activeInvoiceModal, setActiveInvoiceModal] = useState<{
-    url: string;
+    urls: string[];
     itemName: string;
+    currentIndex: number;
   } | null>(null);
 
   // Modals
@@ -504,22 +505,42 @@ export default function PersonDetailPage() {
                             <span className="font-semibold text-slate-900">
                               {entry.item_name}
                             </span>
-                            {entry.invoice_url && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setActiveInvoiceModal({
-                                    url: entry.invoice_url!,
-                                    itemName: entry.item_name,
-                                  })
-                                }
-                                title="View attached invoice / bill picture"
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                              >
-                                <FileImage className="w-3 h-3 text-emerald-600" />
-                                <span>Invoice</span>
-                              </button>
-                            )}
+                            {(() => {
+                              const invUrls =
+                                entry.invoice_urls && entry.invoice_urls.length > 0
+                                  ? entry.invoice_urls
+                                  : entry.invoice_url
+                                  ? [entry.invoice_url]
+                                  : [];
+                              if (invUrls.length === 0) return null;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActiveInvoiceModal({
+                                      urls: invUrls,
+                                      itemName: entry.item_name,
+                                      currentIndex: 0,
+                                    })
+                                  }
+                                  title={
+                                    invUrls.length > 1
+                                      ? `View ${invUrls.length} attached invoices`
+                                      : "View attached invoice / bill picture"
+                                  }
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
+                                    invUrls.length > 1
+                                      ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300 font-semibold"
+                                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                                  }`}
+                                >
+                                  <FileImage className="w-3 h-3 text-emerald-600" />
+                                  <span>
+                                    {invUrls.length > 1 ? `${invUrls.length} Invoices` : "Invoice"}
+                                  </span>
+                                </button>
+                              );
+                            })()}
                           </div>
                           {entry.note && (
                             <span className="text-xs text-slate-500 block mt-0.5 italic">
@@ -648,21 +669,35 @@ export default function PersonDetailPage() {
                       </p>
                     )}
 
-                    {entry.invoice_url && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setActiveInvoiceModal({
-                            url: entry.invoice_url!,
-                            itemName: entry.item_name,
-                          })
-                        }
-                        className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                      >
-                        <FileImage className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>View Invoice / Bill Picture</span>
-                      </button>
-                    )}
+                    {(() => {
+                      const invUrls =
+                        entry.invoice_urls && entry.invoice_urls.length > 0
+                          ? entry.invoice_urls
+                          : entry.invoice_url
+                          ? [entry.invoice_url]
+                          : [];
+                      if (invUrls.length === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setActiveInvoiceModal({
+                              urls: invUrls,
+                              itemName: entry.item_name,
+                              currentIndex: 0,
+                            })
+                          }
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                        >
+                          <FileImage className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>
+                            {invUrls.length > 1
+                              ? `View Attached Invoices (${invUrls.length})`
+                              : "View Invoice / Bill Picture"}
+                          </span>
+                        </button>
+                      );
+                    })()}
 
                     <div className="flex items-center justify-between pt-1.5 text-xs text-slate-500 border-t border-slate-50">
                       <span>{formatDate(entry.created_at)}</span>
@@ -807,11 +842,18 @@ export default function PersonDetailPage() {
                 <h3 className="font-bold text-sm sm:text-base text-slate-800 truncate">
                   {activeInvoiceModal.itemName}
                 </h3>
-                <p className="text-xs text-slate-500">Official Invoice / Bill Receipt</p>
+                <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                  <span>Official Invoice / Bill Receipt</span>
+                  {activeInvoiceModal.urls.length > 1 && (
+                    <span className="font-semibold text-emerald-700">
+                      • Image {activeInvoiceModal.currentIndex + 1} of {activeInvoiceModal.urls.length}
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <a
-                  href={activeInvoiceModal.url}
+                  href={activeInvoiceModal.urls[activeInvoiceModal.currentIndex]}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
@@ -827,13 +869,87 @@ export default function PersonDetailPage() {
                 </button>
               </div>
             </div>
-            <div className="p-4 bg-slate-900/5 flex items-center justify-center overflow-auto max-h-[calc(92vh-60px)]">
+
+            {/* Thumbnail strip if multiple images */}
+            {activeInvoiceModal.urls.length > 1 && (
+              <div className="px-5 py-2 bg-slate-100/90 border-b border-slate-200 flex items-center gap-2 overflow-x-auto shrink-0">
+                {activeInvoiceModal.urls.map((u, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() =>
+                      setActiveInvoiceModal((prev) =>
+                        prev ? { ...prev, currentIndex: i } : null
+                      )
+                    }
+                    className={`h-11 w-11 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
+                      i === activeInvoiceModal.currentIndex
+                        ? "border-emerald-600 ring-2 ring-emerald-400 scale-105"
+                        : "border-slate-300 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={u}
+                      alt={`Invoice thumbnail ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="p-4 bg-slate-900/5 flex items-center justify-center overflow-auto max-h-[calc(92vh-100px)] relative group">
+              {/* Previous button if multiple */}
+              {activeInvoiceModal.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveInvoiceModal((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            currentIndex:
+                              (prev.currentIndex - 1 + prev.urls.length) %
+                              prev.urls.length,
+                          }
+                        : null
+                    )
+                  }
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white shadow-lg flex items-center justify-center font-bold text-lg transition-colors z-10"
+                  title="Previous image"
+                >
+                  ‹
+                </button>
+              )}
+
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={activeInvoiceModal.url}
-                alt={activeInvoiceModal.itemName}
-                className="max-h-[75vh] w-auto object-contain rounded-lg shadow-md"
+                src={activeInvoiceModal.urls[activeInvoiceModal.currentIndex]}
+                alt={`${activeInvoiceModal.itemName} #${activeInvoiceModal.currentIndex + 1}`}
+                className="max-h-[72vh] w-auto object-contain rounded-lg shadow-md"
               />
+
+              {/* Next button if multiple */}
+              {activeInvoiceModal.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveInvoiceModal((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            currentIndex: (prev.currentIndex + 1) % prev.urls.length,
+                          }
+                        : null
+                    )
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white shadow-lg flex items-center justify-center font-bold text-lg transition-colors z-10"
+                  title="Next image"
+                >
+                  ›
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ from app.schemas import (
 )
 from app.pdf_generator import generate_person_pdf
 from app.routers.auth import get_current_user_email
+from app.routers.entries import to_entry_read
 
 router = APIRouter(prefix="/persons", tags=["Persons"])
 
@@ -39,12 +40,12 @@ def create_person(
     session: Session = Depends(get_session),
     current_user_email: str = Depends(get_current_user_email),
 ):
-    owner = payload.created_by or current_user_email
+    # Strictly bind new person to the currently logged in user
     person = Person(
         name=payload.name,
         contact=payload.contact,
         total_amount_given=payload.total_amount_given,
-        created_by=owner,
+        created_by=current_user_email,
     )
     session.add(person)
     session.commit()
@@ -99,20 +100,7 @@ def get_person(
     total_spent = sum(e.quantity * e.price for e in entries)
     remaining = person.total_amount_given - total_spent
 
-    entry_reads = [
-        EntryRead(
-            id=e.id,
-            person_id=e.person_id,
-            item_name=e.item_name,
-            quantity=e.quantity,
-            item_quality=e.item_quality,
-            price=e.price,
-            line_total=round(e.quantity * e.price, 2),
-            note=e.note,
-            created_at=e.created_at,
-        )
-        for e in entries
-    ]
+    entry_reads = [to_entry_read(e) for e in entries]
 
     return PersonDetailRead(
         id=person.id,

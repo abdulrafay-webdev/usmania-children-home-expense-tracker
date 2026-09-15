@@ -29,6 +29,7 @@ class Entry(SQLModel, table=True):
     note: Optional[str] = Field(default=None)
     invoice_url: Optional[str] = Field(default=None)
     invoice_file_id: Optional[str] = Field(default=None)
+    invoice_urls: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
 
     person: Optional[Person] = Relationship(back_populates="entries")

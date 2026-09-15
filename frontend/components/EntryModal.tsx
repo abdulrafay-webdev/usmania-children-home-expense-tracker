@@ -23,6 +23,15 @@ interface EntryModalProps {
   entryToEdit?: Entry | null;
 }
 
+interface AttachedInvoice {
+  id: string;
+  url?: string;
+  file?: File;
+  previewUrl: string;
+  name: string;
+  size?: number;
+}
+
 export default function EntryModal({
   isOpen,
   onClose,
@@ -36,11 +45,8 @@ export default function EntryModal({
   const [price, setPrice] = useState<string>("");
   const [note, setNote] = useState("");
 
-  // Invoice picture state
-  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
-  const [invoicePreview, setInvoicePreview] = useState<string | null>(null);
-  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
-  const [invoiceFileId, setInvoiceFileId] = useState<string | null>(null);
+  // Multiple invoice pictures state
+  const [invoices, setInvoices] = useState<AttachedInvoice[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,20 +61,30 @@ export default function EntryModal({
       setItemQuality(entryToEdit.item_quality || "");
       setPrice(entryToEdit.price.toString());
       setNote(entryToEdit.note || "");
-      setInvoiceUrl(entryToEdit.invoice_url || null);
-      setInvoiceFileId(entryToEdit.invoice_file_id || null);
-      setInvoicePreview(entryToEdit.invoice_url || null);
-      setInvoiceFile(null);
+
+      // Load existing invoice URLs
+      let existing: AttachedInvoice[] = [];
+      const urls =
+        entryToEdit.invoice_urls && entryToEdit.invoice_urls.length > 0
+          ? entryToEdit.invoice_urls
+          : entryToEdit.invoice_url
+          ? [entryToEdit.invoice_url]
+          : [];
+
+      existing = urls.map((u, idx) => ({
+        id: `saved-${idx}-${u}`,
+        url: u,
+        previewUrl: u,
+        name: `Invoice #${idx + 1}`,
+      }));
+      setInvoices(existing);
     } else {
       setItemName("");
       setQuantity("1");
       setItemQuality("");
       setPrice("");
       setNote("");
-      setInvoiceFile(null);
-      setInvoicePreview(null);
-      setInvoiceUrl(null);
-      setInvoiceFileId(null);
+      setInvoices([]);
     }
     setError(null);
     setUploadStatusText(null);
@@ -80,27 +96,34 @@ export default function EntryModal({
   const parsedPrice = parseFloat(price) || 0;
   const lineTotal = parsedQty * parsedPrice;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 15 * 1024 * 1024) {
-        setError("Invoice file must be smaller than 15MB.");
-        return;
+  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      const newItems: AttachedInvoice[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 20 * 1024 * 1024) {
+          setError(`File "${file.name}" is too large (maximum 20MB allowed).`);
+          return;
+        }
+        newItems.push({
+          id: `new-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          name: file.name,
+          size: file.size,
+        });
       }
-      setInvoiceFile(file);
-      setInvoicePreview(URL.createObjectURL(file));
+      setInvoices((prev) => [...prev, ...newItems]);
       setError(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const handleRemoveInvoice = () => {
-    setInvoiceFile(null);
-    setInvoicePreview(null);
-    setInvoiceUrl(null);
-    setInvoiceFileId(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  const handleRemoveInvoice = (id: string) => {
+    setInvoices((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,16 +148,21 @@ export default function EntryModal({
 
     setIsSubmitting(true);
     try {
-      let finalInvoiceUrl = invoiceUrl;
-      let finalInvoiceFileId = invoiceFileId;
+      // 1. Separate new files to upload vs existing URLs
+      const newFiles = invoices.filter((item) => item.file && !item.url).map((item) => item.file!);
+      const existingUrls = invoices.filter((item) => item.url).map((item) => item.url!);
 
-      // Upload invoice file if a new file was chosen
-      if (invoiceFile) {
-        setUploadStatusText("Uploading invoice to ImageKit...");
-        const uploadRes = await api.uploadInvoice(invoiceFile);
-        finalInvoiceUrl = uploadRes.url;
-        finalInvoiceFileId = uploadRes.file_id;
+      let uploadedUrls: string[] = [];
+      if (newFiles.length > 0) {
+        setUploadStatusText(
+          `Uploading ${newFiles.length} invoice image${newFiles.length > 1 ? "s" : ""} to ImageKit...`
+        );
+        const uploadResponses = await api.uploadInvoices(newFiles);
+        uploadedUrls = uploadResponses.map((r) => r.url);
       }
+
+      const finalInvoiceUrls = [...existingUrls, ...uploadedUrls];
+      const primaryInvoiceUrl = finalInvoiceUrls.length > 0 ? finalInvoiceUrls[0] : null;
 
       setUploadStatusText("Saving expense entry...");
 
@@ -145,8 +173,8 @@ export default function EntryModal({
           item_quality: itemQuality.trim() || undefined,
           price: parsedPrice,
           note: note.trim() || undefined,
-          invoice_url: finalInvoiceUrl,
-          invoice_file_id: finalInvoiceFileId,
+          invoice_url: primaryInvoiceUrl,
+          invoice_urls: finalInvoiceUrls,
         });
         onSuccess(updated);
       } else {
@@ -156,8 +184,8 @@ export default function EntryModal({
           item_quality: itemQuality.trim() || undefined,
           price: parsedPrice,
           note: note.trim() || undefined,
-          invoice_url: finalInvoiceUrl,
-          invoice_file_id: finalInvoiceFileId,
+          invoice_url: primaryInvoiceUrl,
+          invoice_urls: finalInvoiceUrls,
         });
         onSuccess(created);
       }
@@ -288,71 +316,81 @@ export default function EntryModal({
             </div>
           </div>
 
-          {/* Invoice / Bill Picture Attachment (ImageKit) */}
+          {/* Invoice / Bill Picture Attachment (ImageKit) - Multiple Images Supported */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Invoice / Bill Picture (ImageKit)</span>
-              <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Invoice / Bill Pictures ({invoices.length})</span>
+              </label>
+              <span className="text-slate-400 font-normal text-[11px]">(Optional • Multiple allowed)</span>
+            </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/jpg,application/pdf"
-              onChange={handleFileChange}
+              multiple
+              accept="image/jpeg,image/png,image/webp,image/jpg"
+              onChange={handleFilesChange}
               className="hidden"
             />
 
-            {invoicePreview ? (
-              <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex items-center gap-3">
-                <div className="w-14 h-14 rounded-lg bg-slate-200 overflow-hidden shrink-0 border border-slate-300 flex items-center justify-center relative">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={invoicePreview}
-                    alt="Invoice Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 truncate">
-                    <ImageIcon className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="truncate">
-                      {invoiceFile ? invoiceFile.name : "Attached Invoice Image"}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {invoiceFile
-                      ? `${(invoiceFile.size / 1024).toFixed(1)} KB • Ready to upload`
-                      : "Saved on Cloud Storage"}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    {invoiceUrl && (
-                      <a
-                        href={invoiceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-800 font-medium"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        <span>View Original</span>
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-[11px] text-slate-600 hover:text-slate-800 underline"
+            {invoices.length > 0 ? (
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                  {invoices.map((inv, idx) => (
+                    <div
+                      key={inv.id}
+                      className="border border-slate-200 rounded-xl p-2.5 bg-slate-50/80 flex items-center gap-2.5 relative group hover:border-emerald-300 transition-colors"
                     >
-                      Change
-                    </button>
-                  </div>
+                      <div className="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden shrink-0 border border-slate-300 flex items-center justify-center relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={inv.previewUrl}
+                          alt={inv.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1 pr-1">
+                        <div className="text-xs font-semibold text-slate-800 truncate" title={inv.name}>
+                          #{idx + 1}. {inv.name}
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          {inv.file
+                            ? `${(inv.file.size / 1024).toFixed(1)} KB • New`
+                            : "Saved on Cloud"}
+                        </p>
+                        {inv.url && (
+                          <a
+                            href={inv.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-emerald-700 hover:text-emerald-800 font-medium mt-0.5"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            <span>View Original</span>
+                          </a>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveInvoice(inv.id)}
+                        title="Remove this invoice"
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
+
                 <button
                   type="button"
-                  onClick={handleRemoveInvoice}
-                  title="Remove Invoice"
-                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-2 px-3 border border-dashed border-emerald-300 hover:border-emerald-500 bg-emerald-50/40 hover:bg-emerald-50 text-emerald-700 rounded-xl text-xs font-medium inline-flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>+ Add More Invoice Pictures</span>
                 </button>
               </div>
             ) : (
@@ -362,10 +400,10 @@ export default function EntryModal({
               >
                 <UploadCloud className="w-8 h-8 mx-auto text-slate-400 group-hover:text-emerald-600 transition-colors mb-1" />
                 <p className="text-xs font-medium text-slate-700 group-hover:text-emerald-800">
-                  Click to attach invoice or bill receipt
+                  Click to attach invoice or bill receipt(s)
                 </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Supports JPG, PNG, WEBP up to 15MB • Shows on dedicated PDF page
+                  Attach one or multiple pictures (JPG, PNG, WEBP) • Each shows on its own dedicated PDF page
                 </p>
               </div>
             )}

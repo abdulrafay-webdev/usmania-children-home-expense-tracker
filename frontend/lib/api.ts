@@ -9,6 +9,7 @@ export interface Entry {
   note?: string | null;
   invoice_url?: string | null;
   invoice_file_id?: string | null;
+  invoice_urls?: string[];
   created_at: string;
 }
 
@@ -18,6 +19,7 @@ export interface Person {
   contact?: string | null;
   total_amount_given: number;
   created_at: string;
+  created_by?: string;
   total_spent: number;
   remaining_balance: number;
   entries_count: number;
@@ -44,6 +46,7 @@ export interface CreatePersonPayload {
   name: string;
   contact?: string;
   total_amount_given: number;
+  created_by?: string;
 }
 
 export interface UpdatePersonPayload {
@@ -60,6 +63,7 @@ export interface CreateEntryPayload {
   note?: string;
   invoice_url?: string | null;
   invoice_file_id?: string | null;
+  invoice_urls?: string[];
 }
 
 export interface UpdateEntryPayload {
@@ -70,6 +74,7 @@ export interface UpdateEntryPayload {
   note?: string;
   invoice_url?: string | null;
   invoice_file_id?: string | null;
+  invoice_urls?: string[];
 }
 
 export interface UploadResponse {
@@ -156,11 +161,22 @@ export const api = {
 
   getPerson: (id: number): Promise<PersonDetail> => fetchJson<PersonDetail>(`/persons/${id}`),
 
-  createPerson: (payload: CreatePersonPayload): Promise<Person> =>
-    fetchJson<Person>("/persons", {
+  createPerson: (payload: CreatePersonPayload): Promise<Person> => {
+    let userEmail = payload.created_by;
+    if (!userEmail && typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("uch_auth_user");
+        if (saved) {
+          const u = JSON.parse(saved);
+          userEmail = u?.email;
+        }
+      } catch {}
+    }
+    return fetchJson<Person>("/persons", {
       method: "POST",
-      body: JSON.stringify(payload),
-    }),
+      body: JSON.stringify({ ...payload, created_by: userEmail }),
+    });
+  },
 
   updatePerson: (id: number, payload: UpdatePersonPayload): Promise<Person> =>
     fetchJson<Person>(`/persons/${id}`, {
@@ -191,7 +207,7 @@ export const api = {
       method: "DELETE",
     }),
 
-  // Upload Invoice
+  // Upload Invoices (Single and Batch)
   uploadInvoice: async (file: File): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -208,6 +224,10 @@ export const api = {
       throw new Error(err.detail || "Failed to upload invoice to server");
     }
     return response.json();
+  },
+
+  uploadInvoices: async (files: File[]): Promise<UploadResponse[]> => {
+    return Promise.all(files.map((file) => api.uploadInvoice(file)));
   },
 
   // PDF

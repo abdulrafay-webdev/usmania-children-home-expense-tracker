@@ -6,7 +6,7 @@ class PersonBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="Name of person")
     contact: Optional[str] = Field(default=None, max_length=100, description="Phone or contact info")
     total_amount_given: float = Field(default=0.0, ge=0.0, description="Total amount contributed")
-    created_by: Optional[str] = Field(default="saifurrehman@gmail.com", description="User email of owner")
+    created_by: Optional[str] = Field(default=None, description="User email of owner")
 
     @field_validator("name")
     def name_not_empty(cls, v: str) -> str:
@@ -39,6 +39,7 @@ class EntryBase(BaseModel):
     note: Optional[str] = Field(default=None, max_length=1000, description="Optional notes")
     invoice_url: Optional[str] = Field(default=None, description="ImageKit or uploaded invoice picture URL")
     invoice_file_id: Optional[str] = Field(default=None, description="ImageKit file ID")
+    invoice_urls: Optional[List[str]] = Field(default_factory=list, description="List of invoice picture URLs")
 
     @field_validator("item_name")
     def item_not_empty(cls, v: str) -> str:
@@ -58,6 +59,7 @@ class EntryUpdate(BaseModel):
     note: Optional[str] = Field(default=None, max_length=1000)
     invoice_url: Optional[str] = Field(default=None)
     invoice_file_id: Optional[str] = Field(default=None)
+    invoice_urls: Optional[List[str]] = None
 
     @field_validator("item_name")
     def item_not_empty(cls, v: Optional[str]) -> Optional[str]:
@@ -78,6 +80,7 @@ class EntryRead(BaseModel):
     note: Optional[str] = None
     invoice_url: Optional[str] = None
     invoice_file_id: Optional[str] = None
+    invoice_urls: List[str] = Field(default_factory=list)
     created_at: datetime
 
     class Config:

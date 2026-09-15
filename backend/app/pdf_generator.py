@@ -431,9 +431,17 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
     story.append(signoff_table)
 
     # 5. Invoices Section: Each invoice shown on its own dedicated page
-    invoice_entries = [e for e in entries if e.invoice_url and e.invoice_url.strip()]
-    if invoice_entries:
-        for idx, entry in enumerate(invoice_entries, start=1):
+    from app.routers.entries import get_entry_invoice_urls
+
+    # Flatten all attached invoices across all entries
+    all_invoices = []
+    for entry in entries:
+        urls = get_entry_invoice_urls(entry)
+        for img_idx, url in enumerate(urls, start=1):
+            all_invoices.append((entry, url, img_idx, len(urls)))
+
+    if all_invoices:
+        for global_idx, (entry, inv_url, img_idx, total_for_entry) in enumerate(all_invoices, start=1):
             story.append(PageBreak())
 
             # Header on invoice page
@@ -442,10 +450,12 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
                 Spacer(1, 2),
                 Paragraph("OFFICIAL INVOICE / VOUCHER ATTACHMENT", subtitle_style),
             ]
+
+            photo_label = f" (Image {img_idx}/{total_for_entry})" if total_for_entry > 1 else ""
             inv_header_right = [
                 Paragraph(f"<b>Person:</b> {person.name}", meta_style),
-                Paragraph(f"<b>Invoice:</b> #{idx} of {len(invoice_entries)}", meta_style),
-                Paragraph(f"<b>Item Ref:</b> #{entry.id}", meta_style),
+                Paragraph(f"<b>Invoice:</b> #{global_idx} of {len(all_invoices)}", meta_style),
+                Paragraph(f"<b>Item Ref:</b> #{entry.id}{photo_label}", meta_style),
             ]
             inv_header_table = Table([[inv_header_left, inv_header_right]], colWidths=[340, 192])
             inv_header_table.setStyle(TableStyle([
@@ -462,9 +472,10 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
             # Entry Details Box
             line_tot = entry.quantity * entry.price
             date_str = entry.created_at.strftime("%b %d, %Y") if entry.created_at else "N/A"
+            item_display = f"{entry.item_name}{photo_label}"
             meta_box_data = [
                 [
-                    Paragraph(f"<b>Expense Item:</b> {entry.item_name}", card_val_style),
+                    Paragraph(f"<b>Expense Item:</b> {item_display}", card_val_style),
                     Paragraph(f"<b>Quality / Grade:</b> {entry.item_quality or '—'}", card_label_style),
                 ],
                 [
@@ -492,7 +503,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
             story.append(Spacer(1, 10))
 
             # Render the invoice image
-            rl_img, err_msg = load_and_resize_image(entry.invoice_url, max_w=532.0, max_h=530.0)
+            rl_img, err_msg = load_and_resize_image(inv_url, max_w=532.0, max_h=530.0)
             if rl_img:
                 img_table = Table([[rl_img]], colWidths=[532])
                 img_table.setStyle(TableStyle([
@@ -509,7 +520,7 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
                     [
                         Paragraph(
                             f"<b>Invoice Attached:</b> Image could not be loaded into PDF ({err_msg}).<br/>"
-                            f"<b>Online Link:</b> {entry.invoice_url}",
+                            f"<b>Online Link:</b> {inv_url}",
                             table_cell_muted
                         )
                     ]
