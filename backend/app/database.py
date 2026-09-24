@@ -31,6 +31,7 @@ else:
     )
 
 def init_db():
+    from app.models import Person, Payment, Entry
     SQLModel.metadata.create_all(engine)
     # Ensure newly added columns exist on existing database tables (Neon Postgres / SQLite)
     with Session(engine) as session:
@@ -63,6 +64,22 @@ def init_db():
                 session.connection().exec_driver_sql("ALTER TABLE person ADD COLUMN IF NOT EXISTS created_by VARCHAR DEFAULT 'saifurrehman@gmail.com'")
                 session.connection().exec_driver_sql("UPDATE person SET created_by = 'saifurrehman@gmail.com' WHERE created_by IS NULL")
                 session.commit()
+
+            # Backfill initial payment records for existing persons if none exist yet
+            from sqlmodel import select
+            persons = session.exec(select(Person)).all()
+            for p in persons:
+                existing_pmts = session.exec(select(Payment).where(Payment.person_id == p.id)).all()
+                if not existing_pmts and p.total_amount_given > 0:
+                    init_pmt = Payment(
+                        person_id=p.id,
+                        amount=p.total_amount_given,
+                        note="Initial Contribution",
+                        payment_date=p.created_at,
+                        created_at=p.created_at,
+                    )
+                    session.add(init_pmt)
+            session.commit()
         except Exception:
             pass
 

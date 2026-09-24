@@ -18,7 +18,7 @@ from reportlab.platypus import (
     Image as RLImage,
 )
 from reportlab.pdfgen import canvas
-from app.models import Person, Entry
+from app.models import Person, Entry, Payment
 from app.imagekit_service import UPLOAD_DIR
 
 class NumberedCanvas(canvas.Canvas):
@@ -122,7 +122,7 @@ def load_and_resize_image(image_source: str, max_w: float = 532.0, max_h: float 
         return None, str(e)
 
 
-def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
+def generate_person_pdf(person: Person, entries: List[Entry], payments: Optional[List[Payment]] = None) -> io.BytesIO:
     buffer = io.BytesIO()
     # Letter size: 612 x 792 pt. Margins 40 left & right => 532 pt usable width.
     doc = SimpleDocTemplate(
@@ -336,9 +336,73 @@ def generate_person_pdf(person: Person, entries: List[Entry]) -> io.BytesIO:
         ("RIGHTPADDING", (0, 0), (-1, -1), 8),
     ]))
     story.append(summary_table)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 14))
 
-    # 3. Expense Entries Section
+    # 3. Contributions & Funds Received Section
+    story.append(Paragraph("<b>FUNDS & CONTRIBUTIONS RECEIVED</b>", subtitle_style))
+    story.append(Spacer(1, 6))
+
+    pmt_data = [
+        [
+            Paragraph("<b>#</b>", table_header_style),
+            Paragraph("<b>Date Received</b>", table_header_style),
+            Paragraph("<b>Contribution Note / Description</b>", table_header_style),
+            Paragraph("<b>Amount Received</b>", table_header_right),
+        ]
+    ]
+    pmt_col_widths = [25, 110, 247, 150]
+
+    actual_pmts = payments if payments is not None else []
+    total_pmts = sum(p.amount for p in actual_pmts) if actual_pmts else person.total_amount_given
+
+    if not actual_pmts:
+        date_str = person.created_at.strftime("%b %d, %Y") if person.created_at else "N/A"
+        pmt_data.append([
+            Paragraph("1", table_cell_style),
+            Paragraph(date_str, table_cell_style),
+            Paragraph("Initial Contribution", table_cell_style),
+            Paragraph(format_currency(person.total_amount_given), table_cell_right_bold),
+        ])
+    else:
+        for idx, pmt in enumerate(actual_pmts, start=1):
+            p_date_str = pmt.payment_date.strftime("%b %d, %Y") if pmt.payment_date else "N/A"
+            note_str = pmt.note if pmt.note else f"Contribution #{idx}"
+            pmt_data.append([
+                Paragraph(str(idx), table_cell_style),
+                Paragraph(p_date_str, table_cell_style),
+                Paragraph(note_str, table_cell_style),
+                Paragraph(format_currency(pmt.amount), table_cell_right_bold),
+            ])
+
+    pmt_data.append([
+        Paragraph(f"<b>Total Funds Received ({len(actual_pmts) if actual_pmts else 1} contribution{'s' if (len(actual_pmts) if actual_pmts else 1) > 1 else ''})</b>", total_label_style),
+        "",
+        "",
+        Paragraph(f"<b>{format_currency(total_pmts)}</b>", total_amount_style),
+    ])
+
+    pmt_table = Table(pmt_data, colWidths=pmt_col_widths, repeatRows=1)
+    pmt_style = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0f766e")),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("GRID", (0, 0), (-1, -2), 0.5, colors.HexColor("#e2e8f0")),
+        ("LINEBELOW", (0, -1), (-1, -1), 1.5, colors.HexColor("#0f766e")),
+        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#f1f5f9")),
+        ("SPAN", (0, -1), (2, -1)),
+    ]
+    for i in range(1, len(pmt_data) - 1):
+        if i % 2 == 0:
+            pmt_style.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#f8fafc")))
+    pmt_table.setStyle(TableStyle(pmt_style))
+    story.append(pmt_table)
+    story.append(Spacer(1, 14))
+
+    # 4. Expense Entries Section
     story.append(Paragraph("<b>ITEMIZED EXPENSE ENTRIES</b>", subtitle_style))
     story.append(Spacer(1, 6))
 

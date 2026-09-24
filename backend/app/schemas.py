@@ -7,6 +7,7 @@ class PersonBase(BaseModel):
     contact: Optional[str] = Field(default=None, max_length=100, description="Phone or contact info")
     total_amount_given: float = Field(default=0.0, ge=0.0, description="Total amount contributed")
     created_by: Optional[str] = Field(default=None, description="User email of owner")
+    created_at: Optional[datetime] = Field(default=None, description="Date of registration / creation")
 
     @field_validator("name")
     def name_not_empty(cls, v: str) -> str:
@@ -22,6 +23,7 @@ class PersonUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     contact: Optional[str] = Field(default=None, max_length=100)
     total_amount_given: Optional[float] = Field(default=None, ge=0.0)
+    created_at: Optional[datetime] = Field(default=None)
 
     @field_validator("name")
     def name_not_empty(cls, v: Optional[str]) -> Optional[str]:
@@ -30,6 +32,25 @@ class PersonUpdate(BaseModel):
             if not v:
                 raise ValueError("Name cannot be blank")
         return v
+
+class PaymentBase(BaseModel):
+    amount: float = Field(..., gt=0.0, description="Amount of contribution")
+    note: Optional[str] = Field(default=None, max_length=500, description="Payment note or remark")
+    payment_date: Optional[datetime] = Field(default=None, description="Date of payment")
+
+class PaymentCreate(PaymentBase):
+    pass
+
+class PaymentRead(BaseModel):
+    id: int
+    person_id: int
+    amount: float
+    note: Optional[str] = None
+    payment_date: datetime
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class EntryBase(BaseModel):
     item_name: str = Field(..., min_length=1, max_length=255, description="Item or expense description")
@@ -40,6 +61,7 @@ class EntryBase(BaseModel):
     invoice_url: Optional[str] = Field(default=None, description="ImageKit or uploaded invoice picture URL")
     invoice_file_id: Optional[str] = Field(default=None, description="ImageKit file ID")
     invoice_urls: Optional[List[str]] = Field(default_factory=list, description="List of invoice picture URLs")
+    created_at: Optional[datetime] = Field(default=None, description="Date of expense entry")
 
     @field_validator("item_name")
     def item_not_empty(cls, v: str) -> str:
@@ -60,6 +82,7 @@ class EntryUpdate(BaseModel):
     invoice_url: Optional[str] = Field(default=None)
     invoice_file_id: Optional[str] = Field(default=None)
     invoice_urls: Optional[List[str]] = None
+    created_at: Optional[datetime] = Field(default=None)
 
     @field_validator("item_name")
     def item_not_empty(cls, v: Optional[str]) -> Optional[str]:
@@ -102,6 +125,7 @@ class PersonRead(BaseModel):
 
 class PersonDetailRead(PersonRead):
     entries: List[EntryRead] = []
+    payments: List[PaymentRead] = []
 
 class RecentEntry(EntryRead):
     person_name: str

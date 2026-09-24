@@ -13,6 +13,15 @@ export interface Entry {
   created_at: string;
 }
 
+export interface Payment {
+  id: number;
+  person_id: number;
+  amount: number;
+  note?: string | null;
+  payment_date: string;
+  created_at: string;
+}
+
 export interface Person {
   id: number;
   name: string;
@@ -27,6 +36,7 @@ export interface Person {
 
 export interface PersonDetail extends Person {
   entries: Entry[];
+  payments?: Payment[];
 }
 
 export interface RecentEntry extends Entry {
@@ -47,12 +57,20 @@ export interface CreatePersonPayload {
   contact?: string;
   total_amount_given: number;
   created_by?: string;
+  created_at?: string;
 }
 
 export interface UpdatePersonPayload {
   name?: string;
   contact?: string;
   total_amount_given?: number;
+  created_at?: string;
+}
+
+export interface AddPaymentPayload {
+  amount: number;
+  note?: string;
+  payment_date?: string;
 }
 
 export interface CreateEntryPayload {
@@ -64,6 +82,7 @@ export interface CreateEntryPayload {
   invoice_url?: string | null;
   invoice_file_id?: string | null;
   invoice_urls?: string[];
+  created_at?: string;
 }
 
 export interface UpdateEntryPayload {
@@ -75,6 +94,7 @@ export interface UpdateEntryPayload {
   invoice_url?: string | null;
   invoice_file_id?: string | null;
   invoice_urls?: string[];
+  created_at?: string;
 }
 
 export interface UploadResponse {
@@ -188,6 +208,24 @@ export const api = {
     fetchJson<{ message: string }>(`/persons/${id}`, {
       method: "DELETE",
     }),
+
+  // Payments / Additional Amount
+  addPayment: (personId: number, payload: AddPaymentPayload): Promise<Payment> =>
+    fetchJson<Payment>(`/persons/${personId}/payments`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  deletePayment: (
+    personId: number,
+    paymentId: number
+  ): Promise<{ message: string; new_total_amount_given: number }> =>
+    fetchJson<{ message: string; new_total_amount_given: number }>(
+      `/persons/${personId}/payments/${paymentId}`,
+      {
+        method: "DELETE",
+      }
+    ),
 
   // Entries
   createEntry: (personId: number, payload: CreateEntryPayload): Promise<Entry> =>

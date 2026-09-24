@@ -70,6 +70,8 @@ def create_entry(
     primary_url = inv_urls[0] if inv_urls else payload.invoice_url
     inv_urls_str = json.dumps(inv_urls) if inv_urls else None
 
+    entry_dt = payload.created_at or utc_now()
+
     entry = Entry(
         person_id=person_id,
         item_name=payload.item_name,
@@ -80,6 +82,7 @@ def create_entry(
         invoice_url=primary_url,
         invoice_file_id=payload.invoice_file_id,
         invoice_urls=inv_urls_str,
+        created_at=entry_dt,
     )
     session.add(entry)
     session.commit()
@@ -119,6 +122,8 @@ def update_entry(
         entry.price = payload.price
     if payload.note is not None:
         entry.note = payload.note
+    if payload.created_at is not None:
+        entry.created_at = payload.created_at
 
     if payload.invoice_urls is not None:
         inv_urls = [u for u in payload.invoice_urls if u and u.strip()]

@@ -16,6 +16,19 @@ class Person(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
 
     entries: List["Entry"] = Relationship(back_populates="person", cascade_delete=True)
+    payments: List["Payment"] = Relationship(back_populates="person", cascade_delete=True)
+
+class Payment(SQLModel, table=True):
+    __tablename__ = "payment"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    person_id: int = Field(foreign_key="person.id", index=True, ondelete="CASCADE")
+    amount: float = Field(..., gt=0.0)
+    note: Optional[str] = Field(default=None)
+    payment_date: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(default_factory=utc_now)
+
+    person: Optional[Person] = Relationship(back_populates="payments")
 
 class Entry(SQLModel, table=True):
     __tablename__ = "entry"

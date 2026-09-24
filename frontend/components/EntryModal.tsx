@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Trash2,
   ExternalLink,
+  Calendar,
 } from "lucide-react";
 import { api, Entry, formatCurrency } from "@/lib/api";
 
@@ -44,6 +45,9 @@ export default function EntryModal({
   const [itemQuality, setItemQuality] = useState("");
   const [price, setPrice] = useState<string>("");
   const [note, setNote] = useState("");
+  const [entryDate, setEntryDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   // Multiple invoice pictures state
   const [invoices, setInvoices] = useState<AttachedInvoice[]>([]);
@@ -61,6 +65,11 @@ export default function EntryModal({
       setItemQuality(entryToEdit.item_quality || "");
       setPrice(entryToEdit.price.toString());
       setNote(entryToEdit.note || "");
+      setEntryDate(
+        entryToEdit.created_at
+          ? new Date(entryToEdit.created_at).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0]
+      );
 
       // Load existing invoice URLs
       let existing: AttachedInvoice[] = [];
@@ -84,6 +93,7 @@ export default function EntryModal({
       setItemQuality("");
       setPrice("");
       setNote("");
+      setEntryDate(new Date().toISOString().split("T")[0]);
       setInvoices([]);
     }
     setError(null);
@@ -166,6 +176,8 @@ export default function EntryModal({
 
       setUploadStatusText("Saving expense entry...");
 
+      const dateIso = entryDate ? new Date(entryDate).toISOString() : undefined;
+
       if (entryToEdit) {
         const updated = await api.updateEntry(entryToEdit.id, {
           item_name: trimmedName,
@@ -175,6 +187,7 @@ export default function EntryModal({
           note: note.trim() || undefined,
           invoice_url: primaryInvoiceUrl,
           invoice_urls: finalInvoiceUrls,
+          created_at: dateIso,
         });
         onSuccess(updated);
       } else {
@@ -186,6 +199,7 @@ export default function EntryModal({
           note: note.trim() || undefined,
           invoice_url: primaryInvoiceUrl,
           invoice_urls: finalInvoiceUrls,
+          created_at: dateIso,
         });
         onSuccess(created);
       }
@@ -282,20 +296,40 @@ export default function EntryModal({
             </div>
           </div>
 
-          {/* Item Quality */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Item Quality / Grade <span className="text-slate-400 font-normal">(Optional)</span>
-            </label>
-            <div className="relative">
-              <Tag className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="e.g. Branded, Super Basmati, Local, Grade A"
-                value={itemQuality}
-                onChange={(e) => setItemQuality(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-800"
-              />
+          {/* Quality & Date of Expense */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Item Quality */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Item Quality / Grade <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <div className="relative">
+                <Tag className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="e.g. Branded, Super Basmati, Local, Grade A"
+                  value={itemQuality}
+                  onChange={(e) => setItemQuality(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-800"
+                />
+              </div>
+            </div>
+
+            {/* Date of Expense */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Date of Expense <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="date"
+                  required
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-800"
+                />
+              </div>
             </div>
           </div>
 

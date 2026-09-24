@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Loader2, User, Phone, DollarSign } from "lucide-react";
+import { X, Loader2, User, Phone, DollarSign, Calendar } from "lucide-react";
 import { api, Person } from "@/lib/api";
 
 interface PersonModalProps {
@@ -20,6 +20,9 @@ export default function PersonModal({
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [totalAmountGiven, setTotalAmountGiven] = useState<string>("");
+  const [date, setDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,10 +31,16 @@ export default function PersonModal({
       setName(personToEdit.name);
       setContact(personToEdit.contact || "");
       setTotalAmountGiven(personToEdit.total_amount_given.toString());
+      setDate(
+        personToEdit.created_at
+          ? new Date(personToEdit.created_at).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0]
+      );
     } else {
       setName("");
       setContact("");
       setTotalAmountGiven("");
+      setDate(new Date().toISOString().split("T")[0]);
     }
     setError(null);
   }, [personToEdit, isOpen]);
@@ -56,11 +65,13 @@ export default function PersonModal({
 
     setIsSubmitting(true);
     try {
+      const dateIso = date ? new Date(date).toISOString() : undefined;
       if (personToEdit) {
         const updated = await api.updatePerson(personToEdit.id, {
           name: trimmedName,
           contact: contact.trim() || undefined,
           total_amount_given: parsedAmount,
+          created_at: dateIso,
         });
         onSuccess(updated);
       } else {
@@ -68,6 +79,7 @@ export default function PersonModal({
           name: trimmedName,
           contact: contact.trim() || undefined,
           total_amount_given: parsedAmount,
+          created_at: dateIso,
         });
         onSuccess(created);
       }
@@ -165,6 +177,26 @@ export default function PersonModal({
             </div>
             <p className="text-xs text-slate-500 mt-1">
               Initial total budget / contribution given by this person.
+            </p>
+          </div>
+
+          {/* Registration / Contribution Date */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Date <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-slate-800"
+              />
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Date when this person joined or gave initial contribution.
             </p>
           </div>
 
